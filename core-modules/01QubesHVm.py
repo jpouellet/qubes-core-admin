@@ -413,7 +413,7 @@ class QubesHVm(QubesResizableVm):
     def _cleanup_zombie_domains(self):
         super(QubesHVm, self)._cleanup_zombie_domains()
         if not self.is_running():
-            xc_stubdom = self.get_xc_dominfo(name=self.name+'-dm')
+            xc_stubdom = self.get_xc_dominfo(name=self.name+'_dm')
             if xc_stubdom is not None:
                 if xc_stubdom['paused'] == 1:
                     subprocess.call(['xl', 'destroy', str(xc_stubdom['domid'])])
