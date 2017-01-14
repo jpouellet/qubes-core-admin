@@ -52,8 +52,9 @@ class TransferWindow():
         self._transferDescriptionLabel = self._gtkBuilder.get_object(self._sourceId['description'])
         self._transferComboBox = self._gtkBuilder.get_object(self._sourceId['target'])
         
-        self._transferDescriptionLabel.set_markup(self._textDescription % source)
+        self._vmListModeler = self._newVMListModeler()
         
+        self._transferDescriptionLabel.set_markup(self._textDescription % source)
         self._transferOkButton.connect("clicked", self._clickedOk)
         self._transferCancelButton.connect("clicked", self._clickedCancel)
         self._confirmed = None
@@ -61,6 +62,8 @@ class TransferWindow():
         self.targetName = None
 		
         self._transferOkButton.set_sensitive(True)
+        
+        self._vmListModeler.applyModelTo(self._transferComboBox)
         
     def _close(self):
         self._transferWindow.close()
@@ -71,6 +74,8 @@ class TransferWindow():
 		
         Gtk.main()
 
+    def _newVMListModeler(self):
+        return VMListModeler()
 
     def confirmTransfer(self):
         self._show()
@@ -80,5 +85,57 @@ class TransferWindow():
         else:
             return False
 
+#TODO Import me instead
+class QubesVmLabel(object):
+    def __init__(self, index, color, name, dispvm=False):
+        self.index = index
+        self.color = color
+        self.name = name
+        self.dispvm = dispvm
+
+        self.icon = '{}-{}'.format(('dispvm' if dispvm else 'appvm'), name)
+
+    def __repr__(self):
+        return '{}({!r}, {!r}, {!r}, dispvm={!r})'.format(
+            self.__class__.__name__,
+            self.index,
+            self.color,
+            self.name,
+            self.dispvm)
+
+    # self.icon_path is obsolete
+    # use QIcon.fromTheme(label.icon) where applicable
+    @property
+    def icon_path(self):
+        return os.path.join(system_path['qubes_icon_dir'], self.icon) + ".png"
+
+
+class VMListModeler:
+    def __init__(self):
+        self._loadList()
+        
+    def _loadList(self):
+        #TODO load the list instead
+        self._list = [QubesVmLabel(0, "red", "sys-net"), QubesVmLabel(1, "red", "sys-firewall"), QubesVmLabel(2, "red", "sys-whonix"), QubesVmLabel(3, "green", "personal"), QubesVmLabel(4, "orange", "anon"), QubesVmLabel(8, "red", "disp-2", True)] 
+        
+    def applyModelTo(self, destinationObject):
+        listStore = Gtk.ListStore(int, str, GdkPixbuf.Pixbuf)
+
+        for vmLabel in self._list:
+            path=os.path.dirname(__file__)+"/../../qubes-core-admin-linux/icons/" + vmLabel.color + ".png"
+        
+            picture = GdkPixbuf.Pixbuf.new_from_file_at_size(path, 32, 32)
+            listStore.append([vmLabel.index, vmLabel.name, picture])
+
+        destinationObject.set_model(listStore)
+
+        renderer = Gtk.CellRendererPixbuf()
+        destinationObject.pack_start(renderer, False)
+        destinationObject.add_attribute(renderer, "pixbuf", 2)
+        
+        renderer = Gtk.CellRendererText()
+        destinationObject.pack_start(renderer, False)
+        destinationObject.add_attribute(renderer, "text", 1)
+        
 if __name__ == "__main__":
     TransferWindow("source").confirmTransfer()
