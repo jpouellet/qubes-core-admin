@@ -23,63 +23,63 @@ import unittest
 from core.gtkhelpers import *
 
 class TransferWindowTestBase(TransferWindow):
-    def __init__(self, sourceName, targetName):
-        self.testSourceName = sourceName
-        self.testTargetName = targetName
+    def __init__(self, source_name, target_name):
+        self.test_source_name = source_name
+        self.test_target_name = target_name
         
-        self.testCalledClose = False
-        self.testCalledShow = False
+        self.test_called_close = False
+        self.test_called_show = False
         
-        self.testClickedOk = False
-        self.testClickedCancel = False
+        self.test_clicked_ok = False
+        self.test_clicked_cancel = False
         
-        TransferWindow.__init__(self, self.testSourceName, self.testTargetName)
+        TransferWindow.__init__(self, self.test_source_name, self.test_target_name)
 
     def _close(self):
-        self.testCalledClose = True
+        self.test_called_close = True
         
     def _show(self):
-        self.testCalledShow = True
+        self.test_called_show = True
 
-    def _clickedOk(self, button):
-        TransferWindow._clickedOk(self, button)
-        self.testClickedOk = True
+    def _clicked_ok(self, button):
+        TransferWindow._clicked_ok(self, button)
+        self.test_clicked_ok = True
 	    
-    def _clickedCancel(self, button):
-        TransferWindow._clickedCancel(self, button)
-        self.testClickedCancel = True
+    def _clicked_cancel(self, button):
+        TransferWindow._clicked_cancel(self, button)
+        self.test_clicked_cancel = True
        
-    def test_hasLinkedTheFields(self):
-        self.assertIsNotNone(self._transferWindow)
-        self.assertIsNotNone(self._transferOkButton)
-        self.assertIsNotNone(self._transferCancelButton)
-        self.assertIsNotNone(self._transferDescriptionLabel)
-        self.assertIsNotNone(self._transferComboBox)
+    def test_has_linked_the_fields(self):
+        self.assertIsNotNone(self._transfer_window)
+        self.assertIsNotNone(self._transfer_ok_button)
+        self.assertIsNotNone(self._transfer_cancel_button)
+        self.assertIsNotNone(self._transfer_description_label)
+        self.assertIsNotNone(self._transfer_combo_box)
     
     def test_isShowingSource(self):
-        self.assertTrue(self.testSourceName in self._transferDescriptionLabel.get_text())
+        self.assertTrue(self.test_source_name in self._transfer_description_label.get_text())
     
     def test_lifecycleOpenAndClose(self):
-        self.assertFalse(self.testCalledClose)
-        self.assertFalse(self.testCalledShow)        
-        self.assertFalse(self.testClickedOk)
-        self.assertFalse(self.testClickedCancel)
+        self.assertFalse(self.test_called_close)
+        self.assertFalse(self.test_called_show)        
+        self.assertFalse(self.test_clicked_ok)
+        self.assertFalse(self.test_clicked_cancel)
         
         try:
-            self.confirmTransfer()
+            self.confirm_transfer()
         except:
             pass
             
-        self.assertFalse(self.testCalledClose)
-        self.assertTrue(self.testCalledShow)
-        self.assertFalse(self.testClickedOk)
-        self.assertFalse(self.testClickedCancel)
-
-        self._transferOkButton.clicked()
+        self.assertFalse(self.test_called_close)
+        self.assertTrue(self.test_called_show)        
+        self.assertFalse(self.test_clicked_ok)
+        self.assertFalse(self.test_clicked_cancel)
         
-        self.assertTrue(self.testCalledClose)
-        self.assertTrue(self.testClickedOk)
-        self.assertFalse(self.testClickedCancel)
+        self._transfer_ok_button.clicked()
+        
+        self.assertTrue(self.test_called_close)    
+        self.assertTrue(self.test_clicked_ok)
+        self.assertFalse(self.test_clicked_cancel)
         
     
 class TransferWindowTestNoTarget(TransferWindowTestBase, unittest.TestCase):

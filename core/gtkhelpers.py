@@ -23,65 +23,65 @@ import gi, os
 gi.require_version('Gtk', '3.0')
 from gi.repository import Gtk,GdkPixbuf
 
-gladeDirectory = os.path.join(os.path.dirname(__file__),"gtk")
+glade_directory = os.path.join(os.path.dirname(__file__),"gtk")
 
 class TransferWindow():
-    _sourceFile = os.path.join(gladeDirectory, "TransferWindow.glade")
-    _sourceId = { 'window': "TransferWindow", 
+    _source_file = os.path.join(glade_directory, "TransferWindow.glade")
+    _source_id = { 'window': "TransferWindow", 
                   'ok': "okButton", 
                   'cancel': "cancelButton", 
                   'description': "TransferDescription", 
                   'target': "TargetCombo",
                 }
-    _textDescription = "Allow domain '<b>%s</b>' to execute a file transfer?\n<small>Select the target domain and confirm with 'OK'.</small>"
+    _text_description = "Allow domain '<b>%s</b>' to execute a file transfer?\n<small>Select the target domain and confirm with 'OK'.</small>"
 
-    def _clickedOk(self, button):
+    def _clicked_ok(self, button):
         self._confirmed = True
         self._close()
 	    
-    def _clickedCancel(self, button):
+    def _clicked_cancel(self, button):
         self._confirmed = False
         self._close()
 
     def __init__(self, source, target = None):
-        self._gtkBuilder = Gtk.Builder()
-        self._gtkBuilder.add_from_file(self._sourceFile)
-        self._transferWindow = self._gtkBuilder.get_object(self._sourceId['window'])
-        self._transferOkButton = self._gtkBuilder.get_object(self._sourceId['ok'])
-        self._transferCancelButton = self._gtkBuilder.get_object(self._sourceId['cancel'])
-        self._transferDescriptionLabel = self._gtkBuilder.get_object(self._sourceId['description'])
-        self._transferComboBox = self._gtkBuilder.get_object(self._sourceId['target'])
+        self._gtk_builder = Gtk.Builder()
+        self._gtk_builder.add_from_file(self._source_file)
+        self._transfer_window = self._gtk_builder.get_object(self._source_id['window'])
+        self._transfer_ok_button = self._gtk_builder.get_object(self._source_id['ok'])
+        self._transfer_cancel_button = self._gtk_builder.get_object(self._source_id['cancel'])
+        self._transfer_description_label = self._gtk_builder.get_object(self._source_id['description'])
+        self._transfer_combo_box = self._gtk_builder.get_object(self._source_id['target'])
         
-        self._vmListModeler = self._newVMListModeler()
+        self._VM_list_modeler = self._new_VM_list_modeler()
         
-        self._transferDescriptionLabel.set_markup(self._textDescription % source)
-        self._transferOkButton.connect("clicked", self._clickedOk)
-        self._transferCancelButton.connect("clicked", self._clickedCancel)
+        self._transfer_description_label.set_markup(self._text_description % source)
+        self._transfer_ok_button.connect("clicked", self._clicked_ok)
+        self._transfer_cancel_button.connect("clicked", self._clicked_cancel)
         self._confirmed = None
-        self.targetId = None
-        self.targetName = None
+        self.target_id = None
+        self.target_name = None
 		
-        self._transferOkButton.set_sensitive(True)
+        self._transfer_ok_button.set_sensitive(True)
         
-        self._vmListModeler.applyModelTo(self._transferComboBox)
+        self._VM_list_modeler.apply_model(self._transfer_combo_box)
         
     def _close(self):
-        self._transferWindow.close()
+        self._transfer_window.close()
 		
     def _show(self):
-        self._transferWindow.connect("delete-event", Gtk.main_quit)
-        self._transferWindow.show_all()
+        self._transfer_window.connect("delete-event", Gtk.main_quit)
+        self._transfer_window.show_all()
 		
         Gtk.main()
 
-    def _newVMListModeler(self):
+    def _new_VM_list_modeler(self):
         return VMListModeler()
 
-    def confirmTransfer(self):
+    def confirm_transfer(self):
         self._show()
         
         if self._confirmed:
-            return { 'targetId': self._targetId, 'targetName': self._targetName }
+            return { 'target_id': self._target_id, 'target_name': self._target_name }
         else:
             return False
 
@@ -112,30 +112,31 @@ class QubesVmLabel(object):
 
 class VMListModeler:
     def __init__(self):
-        self._loadList()
+        self._load_list()
         
-    def _loadList(self):
+    def _load_list(self):
         #TODO load the list instead
         self._list = [QubesVmLabel(0, "red", "sys-net"), QubesVmLabel(1, "red", "sys-firewall"), QubesVmLabel(2, "red", "sys-whonix"), QubesVmLabel(3, "green", "personal"), QubesVmLabel(4, "orange", "anon"), QubesVmLabel(8, "red", "disp-2", True)] 
         
-    def applyModelTo(self, destinationObject):
-        listStore = Gtk.ListStore(int, str, GdkPixbuf.Pixbuf)
+    def apply_model(self, destination_object):
+        list_store = Gtk.ListStore(int, str, GdkPixbuf.Pixbuf)
 
-        for vmLabel in self._list:
-            path=os.path.dirname(__file__)+"/../../qubes-core-admin-linux/icons/" + vmLabel.color + ".png"
+        for vm_label in self._list:
+            path = os.path.dirname(__file__)+"/../../qubes-core-admin-linux/icons/" + vm_label.color + ".png"
         
             picture = GdkPixbuf.Pixbuf.new_from_file_at_size(path, 32, 32)
-            listStore.append([vmLabel.index, vmLabel.name, picture])
+            
+            list_store.append([vm_label.index, vm_label.name, picture])
 
-        destinationObject.set_model(listStore)
+        destination_object.set_model(list_store)
 
         renderer = Gtk.CellRendererPixbuf()
-        destinationObject.pack_start(renderer, False)
-        destinationObject.add_attribute(renderer, "pixbuf", 2)
+        destination_object.pack_start(renderer, False)
+        destination_object.add_attribute(renderer, "pixbuf", 2)
         
         renderer = Gtk.CellRendererText()
-        destinationObject.pack_start(renderer, False)
-        destinationObject.add_attribute(renderer, "text", 1)
+        destination_object.pack_start(renderer, False)
+        destination_object.add_attribute(renderer, "text", 1)
         
 if __name__ == "__main__":
-    TransferWindow("source").confirmTransfer()
+    TransferWindow("source").confirm_transfer()
