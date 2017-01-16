@@ -43,6 +43,20 @@ class TransferWindow():
         self._confirmed = False
         self._close()
 
+    def _update_ok_button_sensitivity(self, widget = None):
+        selection = self._transfer_combo_box.get_active_iter()
+        selected = (selection != None)
+    
+        if (selected):
+            model = self._transfer_combo_box.get_model()
+            self._target_id = model[selection][0]
+            self._target_name = model[selection][1]
+        else:
+            self._target_id = None
+            self._target_name = None
+
+        self._transfer_ok_button.set_sensitive(selected)
+
     def __init__(self, source, target = None):
         self._gtk_builder = Gtk.Builder()
         self._gtk_builder.add_from_file(self._source_file)
@@ -57,13 +71,14 @@ class TransferWindow():
         self._transfer_description_label.set_markup(self._text_description % source)
         self._transfer_ok_button.connect("clicked", self._clicked_ok)
         self._transfer_cancel_button.connect("clicked", self._clicked_cancel)
+        self._transfer_combo_box.connect("changed", self._update_ok_button_sensitivity)
         self._confirmed = None
         self.target_id = None
         self.target_name = None
-		
-        self._transfer_ok_button.set_sensitive(True)
         
         self._VM_list_modeler.apply_model(self._transfer_combo_box)
+        
+        self._update_ok_button_sensitivity()
         
     def _close(self):
         self._transfer_window.close()
@@ -81,7 +96,8 @@ class TransferWindow():
         self._show()
         
         if self._confirmed:
-            return { 'target_id': self._target_id, 'target_name': self._target_name }
+            return {    'target_id': self._target_id, 
+                        'target_name': self._target_name }
         else:
             return False
 
@@ -116,27 +132,30 @@ class VMListModeler:
         
     def _load_list(self):
         #TODO load the list instead
-        self._list = [QubesVmLabel(0, "red", "sys-net"), QubesVmLabel(1, "red", "sys-firewall"), QubesVmLabel(2, "red", "sys-whonix"), QubesVmLabel(3, "green", "personal"), QubesVmLabel(4, "orange", "anon"), QubesVmLabel(8, "red", "disp-2", True)] 
+        self._list = [QubesVmLabel(0, "red", "sys-net"), QubesVmLabel(1, "red", "sys-firewall"), QubesVmLabel(2, "red", "sys-whonix"), QubesVmLabel(3, "green", "personal"), QubesVmLabel(4, "orange", "anon"), QubesVmLabel(8, "red", "disp2", True)] 
         
     def apply_model(self, destination_object):
-        list_store = Gtk.ListStore(int, str, GdkPixbuf.Pixbuf)
+        if isinstance(destination_object, Gtk.ComboBox):
+            list_store = Gtk.ListStore(int, str, GdkPixbuf.Pixbuf)
 
-        for vm_label in self._list:
-            path = os.path.dirname(__file__)+"/../../qubes-core-admin-linux/icons/" + vm_label.color + ".png"
-        
-            picture = GdkPixbuf.Pixbuf.new_from_file_at_size(path, 32, 32)
+            for vm_label in self._list:
+                path = os.path.dirname(__file__)+"/../../qubes-core-admin-linux/icons/" + vm_label.color + ".png"
             
-            list_store.append([vm_label.index, vm_label.name, picture])
+                picture = GdkPixbuf.Pixbuf.new_from_file_at_size(path, 32, 32)
+                
+                list_store.append([vm_label.index, vm_label.name, picture])
 
-        destination_object.set_model(list_store)
+            destination_object.set_model(list_store)
 
-        renderer = Gtk.CellRendererPixbuf()
-        destination_object.pack_start(renderer, False)
-        destination_object.add_attribute(renderer, "pixbuf", 2)
-        
-        renderer = Gtk.CellRendererText()
-        destination_object.pack_start(renderer, False)
-        destination_object.add_attribute(renderer, "text", 1)
+            renderer = Gtk.CellRendererPixbuf()
+            destination_object.pack_start(renderer, False)
+            destination_object.add_attribute(renderer, "pixbuf", 2)
+            
+            renderer = Gtk.CellRendererText()
+            destination_object.pack_start(renderer, False)
+            destination_object.add_attribute(renderer, "text", 1)
+        else:
+            raise TypeError("Only expecting Gtk.ComboBox objects to want our model.")
         
 if __name__ == "__main__":
-    TransferWindow("source").confirm_transfer()
+    print TransferWindow("source").confirm_transfer()

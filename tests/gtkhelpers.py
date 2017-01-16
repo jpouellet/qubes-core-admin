@@ -56,10 +56,10 @@ class TransferWindowTestBase(TransferWindow):
         self.assertIsNotNone(self._transfer_description_label)
         self.assertIsNotNone(self._transfer_combo_box)
     
-    def test_isShowingSource(self):
+    def test_is_showing_source(self):
         self.assertTrue(self.test_source_name in self._transfer_description_label.get_text())
     
-    def test_lifecycleOpenAndClose(self):
+    def test_lifecycle_open_and_close(self):
         self.assertFalse(self.test_called_close)
         self.assertFalse(self.test_called_show)        
         self.assertFalse(self.test_clicked_ok)
@@ -81,6 +81,8 @@ class TransferWindowTestBase(TransferWindow):
         self.assertTrue(self.test_clicked_ok)
         self.assertFalse(self.test_clicked_cancel)
         
+    def _new_VM_list_modeler(self):
+        return VMListModelerMock()
     
 class TransferWindowTestNoTarget(TransferWindowTestBase, unittest.TestCase):
     def __init__(self, *args, **kwargs):
@@ -92,5 +94,38 @@ class TransferWindowTestWithTarget(TransferWindowTestBase, unittest.TestCase):
         unittest.TestCase.__init__(self, *args, **kwargs)
         TransferWindowTestBase.__init__(self, "test-source", "test-target")
     
+class VMListModelerMock(VMListModeler):
+    def _load_list(self):
+        self._list = [  QubesVmLabel(2, "red", "test-red1"),
+                        QubesVmLabel(4, "red", "test-red2"),
+                        QubesVmLabel(7, "red", "test-red3"),
+                        QubesVmLabel(8, "green", "test-source"),
+                        QubesVmLabel(10, "orange", "test-target"),
+                        QubesVmLabel(15, "red", "test-disp6", True) ] 
+        
+
+class VMListModelerTest(VMListModelerMock, unittest.TestCase):
+    def __init__(self, *args, **kwargs):
+        unittest.TestCase.__init__(self, *args, **kwargs)
+        VMListModeler.__init__(self)
+    
+    def test_list_gets_loaded(self):
+        self.assertIsNotNone(self._list)
+
+    def test_apply_model(self):
+        new_object = Gtk.ComboBox()
+        self.assertIsNone(new_object.get_model())
+        
+        self.apply_model(new_object)
+        
+        self.assertIsNotNone(new_object.get_model())
+
+    def test_apply_model_only_combobox(self):
+        invalid_types = [ 1, "One", u'1', {'1': "one"}, VMListModeler()]
+        
+        for invalid_type in invalid_types:
+            with self.assertRaises(TypeError):
+                self.apply_model(invalid_type)
+        
 if __name__=='__main__':
     unittest.main()
