@@ -39,6 +39,12 @@ class TransferWindow():
     _text_description += "\n<small>Select the target domain and confirm with " 
     _text_description += "'OK'.</small>"
 
+    class IllegalTarget(Exception):
+        pass
+        
+    class TargetNotFound(Exception):
+        pass
+
     def _clicked_ok(self, button):
         self._confirmed = True
         self._close()
@@ -50,7 +56,7 @@ class TransferWindow():
     def _update_ok_button_sensitivity(self, widget = None):
         selection = self._transfer_combo_box.get_active_iter()
         selected = (selection != None)
-    
+
         if (selected):
             model = self._transfer_combo_box.get_model()
             self._target_id = model[selection][0]
@@ -60,6 +66,28 @@ class TransferWindow():
             self._target_name = None
 
         self._transfer_ok_button.set_sensitive(selected)
+
+    def _set_initial_target(self, source, target):
+        if target != None:
+            if target == source:
+                raise TransferWindow.IllegalTarget(
+                     "Source and target domains must not be the same.")
+            else:
+                model = self._transfer_combo_box.get_model()
+                
+                found = False
+                for item in model:
+                    if item[1] == target:
+                        found = True
+                        
+                        self._transfer_combo_box.set_active_iter(
+                                    model.get_iter(item.path))
+                        
+                        break
+
+                if not found:
+                    raise TransferWindow.TargetNotFound(
+                                    "Domain '%s' doesn't exist." % target)
 
     def __init__(self, source, target = None):
         self._gtk_builder = Gtk.Builder()
@@ -79,15 +107,16 @@ class TransferWindow():
                                                         % source)
         self._transfer_ok_button.connect("clicked", self._clicked_ok)
         self._transfer_cancel_button.connect("clicked", self._clicked_cancel)
-        self._transfer_combo_box.connect("changed", 
-                                            self._update_ok_button_sensitivity)
-        self._confirmed = None
-        self.target_id = None
-        self.target_name = None
         
         self._new_VM_list_modeler().apply_model(self._transfer_combo_box, 
                                 [ VMListModeler.ExcludeNameFilter(source) ])
         
+        self._confirmed = None
+
+        self._set_initial_target(source, target)
+        
+        self._transfer_combo_box.connect("changed", 
+                                    self._update_ok_button_sensitivity)
         self._update_ok_button_sensitivity()
         
     def _close(self):

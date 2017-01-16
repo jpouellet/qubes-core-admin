@@ -96,6 +96,22 @@ class TransferWindowTestWithTarget(TransferWindowTestBase, unittest.TestCase):
         unittest.TestCase.__init__(self, *args, **kwargs)
         TransferWindowTestBase.__init__(self, "test-source", "test-target")
     
+class TransferWindowTestWithTargetInvalid(unittest.TestCase):
+    def __init__(self, *args, **kwargs):
+        unittest.TestCase.__init__(self, *args, **kwargs)
+    
+    def test_unknown(self):
+        with self.assertRaises(TransferWindow.TargetNotFound):
+            TransferWindowTestBase("test-source", "test-wrong-target")
+            
+    def test_empty(self):
+        with self.assertRaises(TransferWindow.TargetNotFound):
+            TransferWindowTestBase("test-source", "")
+    
+    def test_equals_source(self):
+        with self.assertRaises(TransferWindow.IllegalTarget):
+            TransferWindowTestBase("test-source", "test-source")
+            
 class VMListModelerMock(VMListModeler):
     def _load_list(self):
         self._list = [  QubesVmLabel(2, "red", "test-red1"),
