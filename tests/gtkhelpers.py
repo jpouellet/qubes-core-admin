@@ -33,7 +33,8 @@ class TransferWindowTestBase(TransferWindow):
         self.test_clicked_ok = False
         self.test_clicked_cancel = False
         
-        TransferWindow.__init__(self, self.test_source_name, self.test_target_name)
+        TransferWindow.__init__(self, self.test_source_name, 
+                                    self.test_target_name)
 
     def _close(self):
         self.test_called_close = True
@@ -57,7 +58,8 @@ class TransferWindowTestBase(TransferWindow):
         self.assertIsNotNone(self._transfer_combo_box)
     
     def test_is_showing_source(self):
-        self.assertTrue(self.test_source_name in self._transfer_description_label.get_text())
+        self.assertTrue(self.test_source_name in 
+                            self._transfer_description_label.get_text())
     
     def test_lifecycle_open_and_close(self):
         self.assertFalse(self.test_called_close)
@@ -126,6 +128,22 @@ class VMListModelerTest(VMListModelerMock, unittest.TestCase):
         for invalid_type in invalid_types:
             with self.assertRaises(TypeError):
                 self.apply_model(invalid_type)
+        
+    def test_apply_model_exclusions(self):
+        combo = Gtk.ComboBox()
+        
+        self.apply_model(combo)
+        self.assertEquals(6, len(combo.get_model()))
+        
+        self.apply_model(combo, [   VMListModeler.ExcludeNameFilter(
+                                        self._list[0].name) ])
+        self.assertEquals(5, len(combo.get_model()))
+        
+        self.apply_model(combo, [   VMListModeler.ExcludeNameFilter(
+                                        self._list[0].name), 
+                                    VMListModeler.ExcludeNameFilter(
+                                        self._list[1].name) ])
+        self.assertEquals(4, len(combo.get_model()))
         
 if __name__=='__main__':
     unittest.main()
