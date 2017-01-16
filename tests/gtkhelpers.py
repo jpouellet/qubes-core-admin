@@ -114,7 +114,7 @@ class TransferWindowTestBase(TransferWindow):
                 
         try:
             # We expect the call to exit immediately, since no window is opened 
-            self.confirm_transfer()
+            self._confirm_transfer()
         except:
             pass
             

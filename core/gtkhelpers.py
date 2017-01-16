@@ -34,16 +34,12 @@ class TransferWindow():
                   'cancel': "cancelButton", 
                   'description': "TransferDescription", 
                   'target': "TargetCombo",
+                  'error_bar': "ErrorBar",
+                  'error_message': "ErrorMessage",
                 }
     _text_description = "Allow domain '<b>%s</b>' to execute a file transfer?" 
     _text_description += "\n<small>Select the target domain and confirm with " 
     _text_description += "'OK'.</small>"
-
-    class IllegalTarget(Exception):
-        pass
-        
-    class TargetNotFound(Exception):
-        pass
 
     def _clicked_ok(self, button):
         self._confirmed = True
@@ -67,10 +63,17 @@ class TransferWindow():
 
         self._transfer_ok_button.set_sensitive(selected)
 
+    def _show_error(self, error_message):
+        self._error_message.set_text(error_message)
+        self._error_bar.set_visible(True)
+
+    def _close_error(self, error_bar, response):
+        self._error_bar.set_visible(False)
+
     def _set_initial_target(self, source, target):
         if target != None:
             if target == source:
-                raise TransferWindow.IllegalTarget(
+                self._show_error(
                      "Source and target domains must not be the same.")
             else:
                 model = self._transfer_combo_box.get_model()
@@ -86,8 +89,7 @@ class TransferWindow():
                         break
 
                 if not found:
-                    raise TransferWindow.TargetNotFound(
-                                    "Domain '%s' doesn't exist." % target)
+                    self._show_error("Domain '%s' doesn't exist." % target)
 
     def __init__(self, source, target = None):
         self._gtk_builder = Gtk.Builder()
@@ -102,11 +104,17 @@ class TransferWindow():
                                             self._source_id['description'])
         self._transfer_combo_box = self._gtk_builder.get_object(
                                             self._source_id['target'])
+        self._error_bar = self._gtk_builder.get_object(
+                                            self._source_id['error_bar'])
+        self._error_message = self._gtk_builder.get_object(
+                                            self._source_id['error_message'])
         
         self._transfer_description_label.set_markup(self._text_description 
                                                         % source)
         self._transfer_ok_button.connect("clicked", self._clicked_ok)
         self._transfer_cancel_button.connect("clicked", self._clicked_cancel)
+        
+        self._error_bar.connect("response", self._close_error)
         
         self._new_VM_list_modeler().apply_model(self._transfer_combo_box, 
                                 [ VMListModeler.ExcludeNameFilter(source) ])
@@ -131,7 +139,7 @@ class TransferWindow():
     def _new_VM_list_modeler(self):
         return VMListModeler()
 
-    def confirm_transfer(self):
+    def _confirm_transfer(self):
         self._show()
         
         if self._confirmed:
@@ -139,6 +147,12 @@ class TransferWindow():
                         'target_name': self._target_name }
         else:
             return False
+            
+    @staticmethod
+    def confirm_transfer(source, target = None):
+        window = TransferWindow(source, target)
+        
+        return window._confirm_transfer()
 
 #TODO Import me instead
 class QubesVmLabel(object):
@@ -218,4 +232,4 @@ class VMListModeler:
             return vm_label.name != self._avoid_name
             
 if __name__ == "__main__":
-    print TransferWindow("source").confirm_transfer()
+    print TransferWindow.confirm_transfer("source","source")
