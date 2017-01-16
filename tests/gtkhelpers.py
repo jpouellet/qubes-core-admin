@@ -61,27 +61,81 @@ class TransferWindowTestBase(TransferWindow):
         self.assertTrue(self.test_source_name in 
                             self._transfer_description_label.get_text())
     
-    def test_lifecycle_open_and_close(self):
+    def test_lifecycle_open_select_ok(self):
+        self._lifecycle_start(select_target = True)
+        self._lifecycle_click(click_type = "ok")
+
+    def test_lifecycle_open_select_cancel(self):
+        self._lifecycle_start(select_target = True)
+        self._lifecycle_click(click_type = "cancel")
+
+    def test_lifecycle_open_select_exit(self):
+        self._lifecycle_start(select_target = True)
+        self._lifecycle_click(click_type = "exit")
+
+    def test_lifecycle_open_cancel(self):
+        self._lifecycle_start(select_target = False)
+        self._lifecycle_click(click_type = "cancel")
+
+    def test_lifecycle_open_exit(self):
+        self._lifecycle_start(select_target = False)
+        self._lifecycle_click(click_type = "exit")
+
+    def _lifecycle_click(self, click_type):
+        if click_type == "ok":
+            self._transfer_ok_button.clicked()
+            
+            self.assertTrue(self.test_clicked_ok)
+            self.assertFalse(self.test_clicked_cancel)
+            self.assertTrue(self._confirmed)
+            self.assertIsNotNone(self._target_id)
+            self.assertIsNotNone(self._target_name)
+        elif click_type == "cancel":
+            self._transfer_cancel_button.clicked()
+            
+            self.assertFalse(self.test_clicked_ok)
+            self.assertTrue(self.test_clicked_cancel)
+            self.assertFalse(self._confirmed)
+        elif click_type == "exit":
+            self._close()
+            
+            self.assertFalse(self.test_clicked_ok)
+            self.assertFalse(self.test_clicked_cancel)
+            self.assertIsNone(self._confirmed)
+            
+        self.assertTrue(self.test_called_close)
+        
+            
+    def _lifecycle_start(self, select_target):
         self.assertFalse(self.test_called_close)
         self.assertFalse(self.test_called_show)        
-        self.assertFalse(self.test_clicked_ok)
-        self.assertFalse(self.test_clicked_cancel)
         
+        self.assert_initial_state()
+                
         try:
+            # We expect the call to exit immediately, since no window is opened 
             self.confirm_transfer()
         except:
             pass
             
         self.assertFalse(self.test_called_close)
         self.assertTrue(self.test_called_show)        
+        
+        self.assert_initial_state()
+        
+        if select_target:
+            self._transfer_combo_box.set_active(1)
+            
+            self.assertTrue(self._transfer_ok_button.get_sensitive())
+            
+            self.assertIsNotNone(self._target_id)
+            self.assertIsNotNone(self._target_name)
+            
+        self.assertFalse(self.test_called_close)
+        self.assertTrue(self.test_called_show)        
         self.assertFalse(self.test_clicked_ok)
         self.assertFalse(self.test_clicked_cancel)
-        
-        self._transfer_ok_button.clicked()
-        
-        self.assertTrue(self.test_called_close)    
-        self.assertTrue(self.test_clicked_ok)
-        self.assertFalse(self.test_clicked_cancel)
+        self.assertFalse(self._confirmed)
         
     def _new_VM_list_modeler(self):
         return VMListModelerMock()
@@ -90,12 +144,37 @@ class TransferWindowTestNoTarget(TransferWindowTestBase, unittest.TestCase):
     def __init__(self, *args, **kwargs):
         unittest.TestCase.__init__(self, *args, **kwargs)
         TransferWindowTestBase.__init__(self, "test-source", None)
+        
+    def assert_initial_state(self):
+        self.assertIsNone(self._target_id)
+        self.assertIsNone(self._target_name)
+        self.assertFalse(self.test_clicked_ok)
+        self.assertFalse(self.test_clicked_cancel)
+        self.assertFalse(self._confirmed)
+        self.assertFalse(self._transfer_ok_button.get_sensitive()) 
     
 class TransferWindowTestWithTarget(TransferWindowTestBase, unittest.TestCase):
     def __init__(self, *args, **kwargs):
         unittest.TestCase.__init__(self, *args, **kwargs)
         TransferWindowTestBase.__init__(self, "test-source", "test-target")
     
+    def test_lifecycle_open_ok(self):
+        self._lifecycle_start(select_target = False)
+        self._lifecycle_click(click_type = "ok")
+    
+    def assert_initial_state(self):
+        self.assertIsNotNone(self._target_id)
+        self.assertIsNotNone(self._target_name)
+        self.assertFalse(self.test_clicked_ok)
+        self.assertFalse(self.test_clicked_cancel)
+        self.assertFalse(self._confirmed)
+        self.assertTrue(self._transfer_ok_button.get_sensitive()) 
+        
+    def _lifecycle_click(self, click_type):
+        TransferWindowTestBase._lifecycle_click(self, click_type)
+        self.assertIsNotNone(self._target_id)
+        self.assertIsNotNone(self._target_name)
+            
 class TransferWindowTestWithTargetInvalid(unittest.TestCase):
     def __init__(self, *args, **kwargs):
         unittest.TestCase.__init__(self, *args, **kwargs)
