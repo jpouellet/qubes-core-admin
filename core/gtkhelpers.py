@@ -19,6 +19,8 @@
 # 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 #
 
+import qubes
+
 import gi, os
 gi.require_version('Gtk', '3.0')
 from gi.repository import Gtk,GdkPixbuf
@@ -115,7 +117,8 @@ class TransferWindow():
         self._error_bar.connect("response", self._close_error)
         
         self._new_VM_list_modeler().apply_model(self._transfer_combo_box, 
-                                [ VMListModeler.ExcludeNameFilter(source) ])
+                                [ VMListModeler.ExcludeNameFilter("dom0"),
+                                  VMListModeler.ExcludeNameFilter(source) ])
         
         self._confirmed = None
 
@@ -152,30 +155,6 @@ class TransferWindow():
         
         return window._confirm_transfer()
 
-#TODO Import me instead
-class QubesVmLabel(object):
-    def __init__(self, index, color, name, dispvm=False):
-        self.index = index
-        self.color = color
-        self.name = name
-        self.dispvm = dispvm
-
-        self.icon = '{}-{}'.format(('dispvm' if dispvm else 'appvm'), name)
-
-    def __repr__(self):
-        return '{}({!r}, {!r}, {!r}, dispvm={!r})'.format(
-            self.__class__.__name__,
-            self.index,
-            self.color,
-            self.name,
-            self.dispvm)
-
-    # self.icon_path is obsolete
-    # use QIcon.fromTheme(label.icon) where applicable
-    @property
-    def icon_path(self):
-        return os.path.join(system_path['qubes_icon_dir'], self.icon) + ".png"
-
 class GtkIconGetter:
     def __init__(self, size):
         self._icons = {}
@@ -199,16 +178,18 @@ class VMListModeler:
         self._icon_getter = GtkIconGetter(32)
         
     def _get_icon(self, vm):
-        return self._icon_getter.get_icon(vm.icon)
+        return self._icon_getter.get_icon(vm.label.icon)
         
     def _load_list(self):
-        #TODO load the list instead
-        self._list = [  QubesVmLabel(0, "red", "sys-net"), 
-                        QubesVmLabel(1, "red", "sys-firewall"), 
-                        QubesVmLabel(2, "red", "source"), 
-                        QubesVmLabel(3, "green", "personal"), 
-                        QubesVmLabel(4, "orange", "anon"), 
-                        QubesVmLabel(8, "red", "disp2", True) ] 
+        collection = qubes.QubesVmCollection()
+        try:
+            collection.lock_db_for_reading()
+            
+            collection.load()
+            
+            self._list = [ vm for vm in collection.values() ]
+        finally:
+            collection.unlock_db()
         
     def apply_model(self, destination_object, vm_filter_list = [] ):
         if isinstance(destination_object, Gtk.ComboBox):
@@ -223,7 +204,7 @@ class VMListModeler:
                         break
                 
                 if matches:
-                    list_store.append([vm.index, vm.name, self._get_icon(vm)])
+                    list_store.append([vm.qid, vm.name, self._get_icon(vm)])
 
             destination_object.set_model(list_store)
 
@@ -235,14 +216,13 @@ class VMListModeler:
             destination_object.pack_start(renderer, False)
             destination_object.add_attribute(renderer, "text", 1)
         else:
-            raise TypeError("Only expecting Gtk.ComboBox objects to want our model.")
+            raise TypeError(
+                    "Only expecting Gtk.ComboBox objects to want our model.")
         
     class ExcludeNameFilter:
         def __init__(self, avoid_name):
             self._avoid_name = avoid_name
         
-        def matches(self, vm_label):
-            return vm_label.name != self._avoid_name
+        def matches(self, vm):
+            return vm.name != self._avoid_name
 
-if __name__ == "__main__":
-    print TransferWindow.confirm_transfer("source","source")

@@ -56,10 +56,15 @@ class TransferWindowTestBase(TransferWindow):
         self.assertIsNotNone(self._transfer_cancel_button)
         self.assertIsNotNone(self._transfer_description_label)
         self.assertIsNotNone(self._transfer_combo_box)
+        self.assertIsNotNone(self._error_bar)
+        self.assertIsNotNone(self._error_message)
     
     def test_is_showing_source(self):
         self.assertTrue(self.test_source_name in 
                             self._transfer_description_label.get_text())
+    
+    def test_hide_dom0_and_source(self):
+        self._transfer_combo_box
     
     def test_lifecycle_open_select_ok(self):
         self._lifecycle_start(select_target = True)
@@ -195,13 +200,27 @@ class TransferWindowTestWithTargetInvalid(unittest.TestCase):
             
 class VMListModelerMock(VMListModeler):
     def _load_list(self):
-        self._list = [  QubesVmLabel(2, "red", "test-red1"),
-                        QubesVmLabel(4, "red", "test-red2"),
-                        QubesVmLabel(7, "red", "test-red3"),
-                        QubesVmLabel(8, "green", "test-source"),
-                        QubesVmLabel(10, "orange", "test-target"),
-                        QubesVmLabel(15, "red", "test-disp6", True) ] 
+        self._list = [  MockVm(0, "dom0", "black"),
+                        MockVm(2, "test-red1", "red"),
+                        MockVm(4, "test-red2", "red"),
+                        MockVm(7, "test-red3", "red"),
+                        MockVm(8, "test-source", "green"),
+                        MockVm(10, "test-target", "orange"),
+                        MockVm(15, "test-disp6", "red", True) ] 
+   
+class MockVmLabel:
+    def __init__(self, index, color, name, dispvm = False):
+        self.index = index
+        self.color = color
+        self.name = name
+        self.dispvm = dispvm
+        self.icon = "gnome-foot" 
         
+class MockVm:
+    def __init__(self, qid, name, color, dispvm = False):
+        self.qid = qid
+        self.name = name
+        self.label = MockVmLabel(qid, 0x000000, color, dispvm)
 
 class VMListModelerTest(VMListModelerMock, unittest.TestCase):
     def __init__(self, *args, **kwargs):
@@ -220,7 +239,7 @@ class VMListModelerTest(VMListModelerMock, unittest.TestCase):
         self.assertIsNotNone(new_object.get_model())
 
     def test_apply_model_only_combobox(self):
-        invalid_types = [ 1, "One", u'1', {'1': "one"}, VMListModeler()]
+        invalid_types = [ 1, "One", u'1', {'1': "one"}, VMListModelerMock()]
         
         for invalid_type in invalid_types:
             with self.assertRaises(TypeError):
@@ -230,17 +249,17 @@ class VMListModelerTest(VMListModelerMock, unittest.TestCase):
         combo = Gtk.ComboBox()
         
         self.apply_model(combo)
-        self.assertEquals(6, len(combo.get_model()))
+        self.assertEquals(7, len(combo.get_model()))
         
         self.apply_model(combo, [   VMListModeler.ExcludeNameFilter(
                                         self._list[0].name) ])
-        self.assertEquals(5, len(combo.get_model()))
+        self.assertEquals(6, len(combo.get_model()))
         
         self.apply_model(combo, [   VMListModeler.ExcludeNameFilter(
                                         self._list[0].name), 
                                     VMListModeler.ExcludeNameFilter(
                                         self._list[1].name) ])
-        self.assertEquals(4, len(combo.get_model()))
+        self.assertEquals(5, len(combo.get_model()))
         
 if __name__=='__main__':
     unittest.main()
