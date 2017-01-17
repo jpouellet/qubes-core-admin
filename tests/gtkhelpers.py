@@ -152,6 +152,7 @@ class TransferWindowTestNoTarget(TransferWindowTestBase, unittest.TestCase):
         self.assertFalse(self.test_clicked_cancel)
         self.assertFalse(self._confirmed)
         self.assertFalse(self._transfer_ok_button.get_sensitive()) 
+        self.assertFalse(self._error_bar.get_visible())
     
 class TransferWindowTestWithTarget(TransferWindowTestBase, unittest.TestCase):
     def __init__(self, *args, **kwargs):
@@ -180,16 +181,17 @@ class TransferWindowTestWithTargetInvalid(unittest.TestCase):
         unittest.TestCase.__init__(self, *args, **kwargs)
     
     def test_unknown(self):
-        with self.assertRaises(TransferWindow.TargetNotFound):
-            TransferWindowTestBase("test-source", "test-wrong-target")
+        self.assert_raises_error(True, "test-source", "test-wrong-target")
             
     def test_empty(self):
-        with self.assertRaises(TransferWindow.TargetNotFound):
-            TransferWindowTestBase("test-source", "")
+        self.assert_raises_error(True, "test-source", "")
     
     def test_equals_source(self):
-        with self.assertRaises(TransferWindow.IllegalTarget):
-            TransferWindowTestBase("test-source", "test-source")
+        self.assert_raises_error(True, "test-source", "test-source")
+            
+    def assert_raises_error(self, expect, source, target):
+        transferWindow = TransferWindowTestBase(source, target)
+        self.assertEquals(expect, transferWindow._error_bar.get_visible())
             
 class VMListModelerMock(VMListModeler):
     def _load_list(self):
