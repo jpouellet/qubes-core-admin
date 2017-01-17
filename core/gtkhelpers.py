@@ -24,8 +24,6 @@ gi.require_version('Gtk', '3.0')
 from gi.repository import Gtk,GdkPixbuf
 
 glade_directory = os.path.join(os.path.dirname(__file__), "gtk")
-icons_directory = os.path.join(os.path.dirname(__file__), "../../" +
-                    "qubes-core-admin-linux/icons/")
 
 class TransferWindow():
     _source_file = os.path.join(glade_directory, "TransferWindow.glade")
@@ -178,10 +176,30 @@ class QubesVmLabel(object):
     def icon_path(self):
         return os.path.join(system_path['qubes_icon_dir'], self.icon) + ".png"
 
+class GtkIconGetter:
+    def __init__(self, size):
+        self._icons = {}
+        self._size = size
+        self._theme = Gtk.IconTheme.get_default()
+        
+    def get_icon(self, name):
+        if name not in self._icons:
+            try:
+                icon = self._theme.load_icon(name, self._size, 0)
+            except:
+                icon = self._theme.load_icon("gnome-foot", self._size, 0)
+            
+            self._icons[name] = icon
+            
+        return self._icons[name] 
 
 class VMListModeler:
     def __init__(self):
         self._load_list()
+        self._icon_getter = GtkIconGetter(32)
+        
+    def _get_icon(self, vm):
+        return self._icon_getter.get_icon(vm.icon)
         
     def _load_list(self):
         #TODO load the list instead
@@ -196,21 +214,16 @@ class VMListModeler:
         if isinstance(destination_object, Gtk.ComboBox):
             list_store = Gtk.ListStore(int, str, GdkPixbuf.Pixbuf)
 
-            for vm_label in self._list:
+            for vm in self._list:
                 matches = True
                 
                 for vm_filter in vm_filter_list:
-                    if not vm_filter.matches(vm_label):
+                    if not vm_filter.matches(vm):
                         matches = False
                         break
                 
                 if matches:
-                    path = os.path.join(icons_directory, 
-                                        vm_label.color + ".png")
-            
-                    picture = GdkPixbuf.Pixbuf.new_from_file_at_size(path, 32, 32)
-                
-                    list_store.append([vm_label.index, vm_label.name, picture])
+                    list_store.append([vm.index, vm.name, self._get_icon(vm)])
 
             destination_object.set_model(list_store)
 
@@ -230,6 +243,6 @@ class VMListModeler:
         
         def matches(self, vm_label):
             return vm_label.name != self._avoid_name
-            
+
 if __name__ == "__main__":
     print TransferWindow.confirm_transfer("source","source")
