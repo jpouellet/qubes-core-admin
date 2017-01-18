@@ -27,19 +27,19 @@ from gi.repository import Gtk,GdkPixbuf
 
 glade_directory = os.path.join(os.path.dirname(__file__), "gtk")
 
-class TransferWindow():
-    _source_file = os.path.join(glade_directory, "TransferWindow.glade")
-    _source_id = { 'window': "TransferWindow", 
+class RPCConfirmationWindow():
+    _source_file = os.path.join(glade_directory, "RPCConfirmationWindow.glade")
+    _source_id = { 'window': "RPCConfirmationWindow", 
                   'ok': "okButton", 
                   'cancel': "cancelButton", 
-                  'description': "TransferDescription", 
+                  'description': "rpcDescription", 
                   'target': "TargetCombo",
                   'error_bar': "ErrorBar",
                   'error_message': "ErrorMessage",
                 }
-    _text_description = "Allow domain '<b>%s</b>' to execute a file transfer?" 
-    _text_description += "\n<small>Select the target domain and confirm with " 
-    _text_description += "'OK'.</small>"
+    _text_description = "Allow domain '<b>%s</b>' to execute the <b>%s</b> "
+    _text_description += "operation?\n<small>Select the target domain and " 
+    _text_description += "confirm with 'OK'.</small>"
 
     def _clicked_ok(self, button):
         self._confirmed = True
@@ -50,18 +50,18 @@ class TransferWindow():
         self._close()
 
     def _update_ok_button_sensitivity(self, widget = None):
-        selection = self._transfer_combo_box.get_active_iter()
+        selection = self._rpc_combo_box.get_active_iter()
         selected = (selection != None)
 
         if (selected):
-            model = self._transfer_combo_box.get_model()
+            model = self._rpc_combo_box.get_model()
             self._target_id = model[selection][0]
             self._target_name = model[selection][1]
         else:
             self._target_id = None
             self._target_name = None
 
-        self._transfer_ok_button.set_sensitive(selected)
+        self._rpc_ok_button.set_sensitive(selected)
 
     def _show_error(self, error_message):
         self._error_message.set_text(error_message)
@@ -76,14 +76,14 @@ class TransferWindow():
                 self._show_error(
                      "Source and target domains must not be the same.")
             else:
-                model = self._transfer_combo_box.get_model()
+                model = self._rpc_combo_box.get_model()
                 
                 found = False
                 for item in model:
                     if item[1] == target:
                         found = True
                         
-                        self._transfer_combo_box.set_active_iter(
+                        self._rpc_combo_box.set_active_iter(
                                     model.get_iter(item.path))
                         
                         break
@@ -94,29 +94,29 @@ class TransferWindow():
     def __init__(self, source, target = None):
         self._gtk_builder = Gtk.Builder()
         self._gtk_builder.add_from_file(self._source_file)
-        self._transfer_window = self._gtk_builder.get_object(
+        self._rpc_window = self._gtk_builder.get_object(
                                             self._source_id['window'])
-        self._transfer_ok_button = self._gtk_builder.get_object(
+        self._rpc_ok_button = self._gtk_builder.get_object(
                                             self._source_id['ok'])
-        self._transfer_cancel_button = self._gtk_builder.get_object(
+        self._rpc_cancel_button = self._gtk_builder.get_object(
                                             self._source_id['cancel'])
-        self._transfer_description_label = self._gtk_builder.get_object(
+        self._rpc_description_label = self._gtk_builder.get_object(
                                             self._source_id['description'])
-        self._transfer_combo_box = self._gtk_builder.get_object(
+        self._rpc_combo_box = self._gtk_builder.get_object(
                                             self._source_id['target'])
         self._error_bar = self._gtk_builder.get_object(
                                             self._source_id['error_bar'])
         self._error_message = self._gtk_builder.get_object(
                                             self._source_id['error_message'])
         
-        self._transfer_description_label.set_markup(self._text_description 
-                                                        % source)
-        self._transfer_ok_button.connect("clicked", self._clicked_ok)
-        self._transfer_cancel_button.connect("clicked", self._clicked_cancel)
+        self._rpc_description_label.set_markup(self._text_description 
+                                                        % (source, "TODO"))
+        self._rpc_ok_button.connect("clicked", self._clicked_ok)
+        self._rpc_cancel_button.connect("clicked", self._clicked_cancel)
         
         self._error_bar.connect("response", self._close_error)
         
-        self._new_VM_list_modeler().apply_model(self._transfer_combo_box, 
+        self._new_VM_list_modeler().apply_model(self._rpc_combo_box, 
                                 [ VMListModeler.ExcludeNameFilter("dom0"),
                                   VMListModeler.ExcludeNameFilter(source) ])
         
@@ -124,23 +124,23 @@ class TransferWindow():
 
         self._set_initial_target(source, target)
         
-        self._transfer_combo_box.connect("changed", 
+        self._rpc_combo_box.connect("changed", 
                                     self._update_ok_button_sensitivity)
         self._update_ok_button_sensitivity()
         
     def _close(self):
-        self._transfer_window.close()
+        self._rpc_window.close()
 		
     def _show(self):
-        self._transfer_window.connect("delete-event", Gtk.main_quit)
-        self._transfer_window.show_all()
+        self._rpc_window.connect("delete-event", Gtk.main_quit)
+        self._rpc_window.show_all()
 		
         Gtk.main()
 
     def _new_VM_list_modeler(self):
         return VMListModeler()
 
-    def _confirm_transfer(self):
+    def _confirm_rpc(self):
         self._show()
         
         if self._confirmed:
@@ -150,10 +150,10 @@ class TransferWindow():
             return False
             
     @staticmethod
-    def confirm_transfer(source, target = None):
-        window = TransferWindow(source, target)
+    def confirm_rpc(source, target = None):
+        window = RPCConfirmationWindow(source, target)
         
-        return window._confirm_transfer()
+        return window._confirm_rpc()
 
 class GtkIconGetter:
     def __init__(self, size):

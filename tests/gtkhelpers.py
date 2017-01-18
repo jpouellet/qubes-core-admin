@@ -19,10 +19,10 @@
 # 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 #
 
-import unittest
+import unittest, sys
 from core.gtkhelpers import *
 
-class TransferWindowTestBase(TransferWindow):
+class RPCConfirmationWindowTestBase(RPCConfirmationWindow):
     def __init__(self, source_name, target_name):
         self.test_source_name = source_name
         self.test_target_name = target_name
@@ -33,7 +33,7 @@ class TransferWindowTestBase(TransferWindow):
         self.test_clicked_ok = False
         self.test_clicked_cancel = False
         
-        TransferWindow.__init__(self, self.test_source_name, 
+        RPCConfirmationWindow.__init__(self, self.test_source_name, 
                                     self.test_target_name)
 
     def _close(self):
@@ -43,28 +43,28 @@ class TransferWindowTestBase(TransferWindow):
         self.test_called_show = True
 
     def _clicked_ok(self, button):
-        TransferWindow._clicked_ok(self, button)
+        RPCConfirmationWindow._clicked_ok(self, button)
         self.test_clicked_ok = True
 	    
     def _clicked_cancel(self, button):
-        TransferWindow._clicked_cancel(self, button)
+        RPCConfirmationWindow._clicked_cancel(self, button)
         self.test_clicked_cancel = True
        
     def test_has_linked_the_fields(self):
-        self.assertIsNotNone(self._transfer_window)
-        self.assertIsNotNone(self._transfer_ok_button)
-        self.assertIsNotNone(self._transfer_cancel_button)
-        self.assertIsNotNone(self._transfer_description_label)
-        self.assertIsNotNone(self._transfer_combo_box)
+        self.assertIsNotNone(self._rpc_window)
+        self.assertIsNotNone(self._rpc_ok_button)
+        self.assertIsNotNone(self._rpc_cancel_button)
+        self.assertIsNotNone(self._rpc_description_label)
+        self.assertIsNotNone(self._rpc_combo_box)
         self.assertIsNotNone(self._error_bar)
         self.assertIsNotNone(self._error_message)
     
     def test_is_showing_source(self):
         self.assertTrue(self.test_source_name in 
-                            self._transfer_description_label.get_text())
+                            self._rpc_description_label.get_text())
     
     def test_hide_dom0_and_source(self):
-        self._transfer_combo_box
+        self._rpc_combo_box
     
     def test_lifecycle_open_select_ok(self):
         self._lifecycle_start(select_target = True)
@@ -88,7 +88,7 @@ class TransferWindowTestBase(TransferWindow):
 
     def _lifecycle_click(self, click_type):
         if click_type == "ok":
-            self._transfer_ok_button.clicked()
+            self._rpc_ok_button.clicked()
             
             self.assertTrue(self.test_clicked_ok)
             self.assertFalse(self.test_clicked_cancel)
@@ -96,7 +96,7 @@ class TransferWindowTestBase(TransferWindow):
             self.assertIsNotNone(self._target_id)
             self.assertIsNotNone(self._target_name)
         elif click_type == "cancel":
-            self._transfer_cancel_button.clicked()
+            self._rpc_cancel_button.clicked()
             
             self.assertFalse(self.test_clicked_ok)
             self.assertTrue(self.test_clicked_cancel)
@@ -119,7 +119,7 @@ class TransferWindowTestBase(TransferWindow):
                 
         try:
             # We expect the call to exit immediately, since no window is opened 
-            self._confirm_transfer()
+            self._confirm_rpc()
         except:
             pass
             
@@ -129,9 +129,9 @@ class TransferWindowTestBase(TransferWindow):
         self.assert_initial_state()
         
         if select_target:
-            self._transfer_combo_box.set_active(1)
+            self._rpc_combo_box.set_active(1)
             
-            self.assertTrue(self._transfer_ok_button.get_sensitive())
+            self.assertTrue(self._rpc_ok_button.get_sensitive())
             
             self.assertIsNotNone(self._target_id)
             self.assertIsNotNone(self._target_name)
@@ -145,10 +145,10 @@ class TransferWindowTestBase(TransferWindow):
     def _new_VM_list_modeler(self):
         return VMListModelerMock()
     
-class TransferWindowTestNoTarget(TransferWindowTestBase, unittest.TestCase):
+class RPCConfirmationWindowTestNoTarget(RPCConfirmationWindowTestBase, unittest.TestCase):
     def __init__(self, *args, **kwargs):
         unittest.TestCase.__init__(self, *args, **kwargs)
-        TransferWindowTestBase.__init__(self, "test-source", None)
+        RPCConfirmationWindowTestBase.__init__(self, "test-source", None)
         
     def assert_initial_state(self):
         self.assertIsNone(self._target_id)
@@ -156,13 +156,13 @@ class TransferWindowTestNoTarget(TransferWindowTestBase, unittest.TestCase):
         self.assertFalse(self.test_clicked_ok)
         self.assertFalse(self.test_clicked_cancel)
         self.assertFalse(self._confirmed)
-        self.assertFalse(self._transfer_ok_button.get_sensitive()) 
+        self.assertFalse(self._rpc_ok_button.get_sensitive()) 
         self.assertFalse(self._error_bar.get_visible())
     
-class TransferWindowTestWithTarget(TransferWindowTestBase, unittest.TestCase):
+class RPCConfirmationWindowTestWithTarget(RPCConfirmationWindowTestBase, unittest.TestCase):
     def __init__(self, *args, **kwargs):
         unittest.TestCase.__init__(self, *args, **kwargs)
-        TransferWindowTestBase.__init__(self, "test-source", "test-target")
+        RPCConfirmationWindowTestBase.__init__(self, "test-source", "test-target")
     
     def test_lifecycle_open_ok(self):
         self._lifecycle_start(select_target = False)
@@ -174,14 +174,14 @@ class TransferWindowTestWithTarget(TransferWindowTestBase, unittest.TestCase):
         self.assertFalse(self.test_clicked_ok)
         self.assertFalse(self.test_clicked_cancel)
         self.assertFalse(self._confirmed)
-        self.assertTrue(self._transfer_ok_button.get_sensitive()) 
+        self.assertTrue(self._rpc_ok_button.get_sensitive()) 
         
     def _lifecycle_click(self, click_type):
-        TransferWindowTestBase._lifecycle_click(self, click_type)
+        RPCConfirmationWindowTestBase._lifecycle_click(self, click_type)
         self.assertIsNotNone(self._target_id)
         self.assertIsNotNone(self._target_name)
             
-class TransferWindowTestWithTargetInvalid(unittest.TestCase):
+class RPCConfirmationWindowTestWithTargetInvalid(unittest.TestCase):
     def __init__(self, *args, **kwargs):
         unittest.TestCase.__init__(self, *args, **kwargs)
     
@@ -195,8 +195,8 @@ class TransferWindowTestWithTargetInvalid(unittest.TestCase):
         self.assert_raises_error(True, "test-source", "test-source")
             
     def assert_raises_error(self, expect, source, target):
-        transferWindow = TransferWindowTestBase(source, target)
-        self.assertEquals(expect, transferWindow._error_bar.get_visible())
+        rpcWindow = RPCConfirmationWindowTestBase(source, target)
+        self.assertEquals(expect, rpcWindow._error_bar.get_visible())
             
 class VMListModelerMock(VMListModeler):
     def _load_list(self):

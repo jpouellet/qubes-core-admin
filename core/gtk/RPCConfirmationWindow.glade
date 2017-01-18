@@ -2,13 +2,12 @@
 <!-- Generated with glade 3.18.3 -->
 <interface>
   <requires lib="gtk+" version="3.0"/>
-  <object class="GtkWindow" id="TransferWindow">
+  <object class="GtkWindow" id="RPCConfirmationWindow">
     <property name="width_request">400</property>
     <property name="can_focus">False</property>
-    <property name="type">popup</property>
-    <property name="title" translatable="yes">Transfer Question</property>
+    <property name="title" translatable="yes">Operation execution</property>
     <property name="window_position">center-always</property>
-    <property name="icon_name">applications-other</property>
+    <property name="icon_name">dialog-question</property>
     <property name="type_hint">notification</property>
     <property name="urgency_hint">True</property>
     <property name="gravity">center</property>
@@ -151,7 +150,7 @@
                     <property name="margin_bottom">6</property>
                     <property name="spacing">12</property>
                     <child>
-                      <object class="GtkImage" id="TransferIcon">
+                      <object class="GtkImage" id="RPCConfirmationIcon">
                         <property name="visible">True</property>
                         <property name="can_focus">False</property>
                         <property name="stock">gtk-dialog-question</property>
@@ -164,11 +163,11 @@
                       </packing>
                     </child>
                     <child>
-                      <object class="GtkLabel" id="TransferDescription">
+                      <object class="GtkLabel" id="rpcDescription">
                         <property name="visible">True</property>
                         <property name="can_focus">False</property>
                         <property name="halign">start</property>
-                        <property name="label" translatable="yes">TransferDescription</property>
+                        <property name="label" translatable="yes">rpcDescription</property>
                         <property name="use_markup">True</property>
                       </object>
                       <packing>
