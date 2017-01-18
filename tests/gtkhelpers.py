@@ -261,5 +261,22 @@ class VMListModelerTest(VMListModelerMock, unittest.TestCase):
                                         self._list[1].name) ])
         self.assertEquals(5, len(combo.get_model()))
         
+class MockRPCConfirmationWindow(RPCConfirmationWindow):
+    def _new_VM_list_modeler(self):
+        return VMListModelerMock()
+        
 if __name__=='__main__':
-    unittest.main()
+    test = False
+    window = False
+
+    if len(sys.argv) == 1 or sys.argv[1] == '-t':
+        test = True
+    elif sys.argv[1] == '-w':
+        window = True
+    else:
+        print "Usage: " + __file__ + " [-t|-w]"
+    
+    if window:
+        print MockRPCConfirmationWindow("test-source")._confirm_rpc()
+    elif test:
+        unittest.main(argv = [sys.argv[0]])
