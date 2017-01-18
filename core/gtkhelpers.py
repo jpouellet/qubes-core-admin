@@ -91,7 +91,7 @@ class RPCConfirmationWindow():
                 if not found:
                     self._show_error("Domain '%s' doesn't exist." % target)
 
-    def __init__(self, source, target = None):
+    def __init__(self, source, rpc_operation, target = None):
         self._gtk_builder = Gtk.Builder()
         self._gtk_builder.add_from_file(self._source_file)
         self._rpc_window = self._gtk_builder.get_object(
@@ -110,7 +110,7 @@ class RPCConfirmationWindow():
                                             self._source_id['error_message'])
         
         self._rpc_description_label.set_markup(self._text_description 
-                                                        % (source, "TODO"))
+                                                    % (source, rpc_operation))
         self._rpc_ok_button.connect("clicked", self._clicked_ok)
         self._rpc_cancel_button.connect("clicked", self._clicked_cancel)
         
@@ -150,8 +150,8 @@ class RPCConfirmationWindow():
             return False
             
     @staticmethod
-    def confirm_rpc(source, target = None):
-        window = RPCConfirmationWindow(source, target)
+    def confirm_rpc(source, rpc_operation, target = None):
+        window = RPCConfirmationWindow(source, rpc_operation, target)
         
         return window._confirm_rpc()
 

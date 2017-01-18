@@ -23,8 +23,9 @@ import unittest, sys
 from core.gtkhelpers import *
 
 class RPCConfirmationWindowTestBase(RPCConfirmationWindow):
-    def __init__(self, source_name, target_name):
+    def __init__(self, source_name, rpc_operation, target_name):
         self.test_source_name = source_name
+        self.test_rpc_operation = rpc_operation
         self.test_target_name = target_name
         
         self.test_called_close = False
@@ -33,8 +34,10 @@ class RPCConfirmationWindowTestBase(RPCConfirmationWindow):
         self.test_clicked_ok = False
         self.test_clicked_cancel = False
         
-        RPCConfirmationWindow.__init__(self, self.test_source_name, 
-                                    self.test_target_name)
+        RPCConfirmationWindow.__init__(self, 
+                                        self.test_source_name, 
+                                        self.test_rpc_operation,
+                                        self.test_target_name)
 
     def _close(self):
         self.test_called_close = True
@@ -61,6 +64,10 @@ class RPCConfirmationWindowTestBase(RPCConfirmationWindow):
     
     def test_is_showing_source(self):
         self.assertTrue(self.test_source_name in 
+                            self._rpc_description_label.get_text())
+    
+    def test_is_showing_operation(self):
+        self.assertTrue(self.test_rpc_operation in 
                             self._rpc_description_label.get_text())
     
     def test_hide_dom0_and_source(self):
@@ -148,7 +155,8 @@ class RPCConfirmationWindowTestBase(RPCConfirmationWindow):
 class RPCConfirmationWindowTestNoTarget(RPCConfirmationWindowTestBase, unittest.TestCase):
     def __init__(self, *args, **kwargs):
         unittest.TestCase.__init__(self, *args, **kwargs)
-        RPCConfirmationWindowTestBase.__init__(self, "test-source", None)
+        RPCConfirmationWindowTestBase.__init__(self, 
+                            "test-source", "test.Operation", None)
         
     def assert_initial_state(self):
         self.assertIsNone(self._target_id)
@@ -162,7 +170,8 @@ class RPCConfirmationWindowTestNoTarget(RPCConfirmationWindowTestBase, unittest.
 class RPCConfirmationWindowTestWithTarget(RPCConfirmationWindowTestBase, unittest.TestCase):
     def __init__(self, *args, **kwargs):
         unittest.TestCase.__init__(self, *args, **kwargs)
-        RPCConfirmationWindowTestBase.__init__(self, "test-source", "test-target")
+        RPCConfirmationWindowTestBase.__init__(self, 
+                            "test-source", "test.Operation", "test-target")
     
     def test_lifecycle_open_ok(self):
         self._lifecycle_start(select_target = False)
@@ -195,7 +204,8 @@ class RPCConfirmationWindowTestWithTargetInvalid(unittest.TestCase):
         self.assert_raises_error(True, "test-source", "test-source")
             
     def assert_raises_error(self, expect, source, target):
-        rpcWindow = RPCConfirmationWindowTestBase(source, target)
+        rpcWindow = RPCConfirmationWindowTestBase(source, 
+                                                    "test.Operation", target)
         self.assertEquals(expect, rpcWindow._error_bar.get_visible())
             
 class VMListModelerMock(VMListModeler):
@@ -277,6 +287,7 @@ if __name__=='__main__':
         print "Usage: " + __file__ + " [-t|-w]"
     
     if window:
-        print MockRPCConfirmationWindow("test-source")._confirm_rpc()
+        print MockRPCConfirmationWindow(
+                        "test-source", "qubes.Filecopy")._confirm_rpc()
     elif test:
         unittest.main(argv = [sys.argv[0]])
