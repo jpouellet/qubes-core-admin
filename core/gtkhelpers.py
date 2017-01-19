@@ -282,6 +282,11 @@ class VMListModeler:
             destination_object.set_model(list_store)
             destination_object.set_id_column(1)
 
+            icon_column = Gtk.CellRendererPixbuf() 
+            destination_object.pack_start(icon_column, False)
+            destination_object.add_attribute(icon_column, "pixbuf", 2)
+            destination_object.set_entry_text_column(1)
+            
             if destination_object.get_has_entry():
                 entry_box = destination_object.get_child()
             
@@ -301,20 +306,15 @@ class VMListModeler:
                             entry, 
                             exclusions))
                 
-                # Removes the extra text column created b/c of the entry, 
-                # but unfortunately generates a GTK assertion error in console
-                destination_object.clear()
+                # A Combo with an entry has a text column already
+                text_column = destination_object.get_cells()[0]
+                destination_object.reorder(text_column, 1)
             else:
                 entry_box = None
             
-            renderer = Gtk.CellRendererPixbuf() 
-            destination_object.pack_start(renderer, False)
-            destination_object.add_attribute(renderer, "pixbuf", 2)
-            destination_object.set_entry_text_column(1)
-            
-            renderer = Gtk.CellRendererText()
-            destination_object.pack_start(renderer, False)
-            destination_object.add_attribute(renderer, "text", 1)
+                text_column = Gtk.CellRendererText()
+                destination_object.pack_start(text_column, False)
+                destination_object.add_attribute(text_column, "text", 1)
             
             changed_function = lambda combo: self._combo_change(
                              selection_trigger, 
