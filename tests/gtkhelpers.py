@@ -100,7 +100,7 @@ class RPCConfirmationWindowTestBase(RPCConfirmationWindow):
             self.assertTrue(self.test_clicked_ok)
             self.assertFalse(self.test_clicked_cancel)
             self.assertTrue(self._confirmed)
-            self.assertIsNotNone(self._target_id)
+            self.assertIsNotNone(self._target_qid)
             self.assertIsNotNone(self._target_name)
         elif click_type == "cancel":
             self._rpc_cancel_button.clicked()
@@ -140,7 +140,7 @@ class RPCConfirmationWindowTestBase(RPCConfirmationWindow):
             
             self.assertTrue(self._rpc_ok_button.get_sensitive())
             
-            self.assertIsNotNone(self._target_id)
+            self.assertIsNotNone(self._target_qid)
             self.assertIsNotNone(self._target_name)
             
         self.assertFalse(self.test_called_close)
@@ -159,7 +159,7 @@ class RPCConfirmationWindowTestNoTarget(RPCConfirmationWindowTestBase, unittest.
                             "test-source", "test.Operation", None)
         
     def assert_initial_state(self):
-        self.assertIsNone(self._target_id)
+        self.assertIsNone(self._target_qid)
         self.assertIsNone(self._target_name)
         self.assertFalse(self.test_clicked_ok)
         self.assertFalse(self.test_clicked_cancel)
@@ -178,7 +178,7 @@ class RPCConfirmationWindowTestWithTarget(RPCConfirmationWindowTestBase, unittes
         self._lifecycle_click(click_type = "ok")
     
     def assert_initial_state(self):
-        self.assertIsNotNone(self._target_id)
+        self.assertIsNotNone(self._target_qid)
         self.assertIsNotNone(self._target_name)
         self.assertFalse(self.test_clicked_ok)
         self.assertFalse(self.test_clicked_cancel)
@@ -187,7 +187,7 @@ class RPCConfirmationWindowTestWithTarget(RPCConfirmationWindowTestBase, unittes
         
     def _lifecycle_click(self, click_type):
         RPCConfirmationWindowTestBase._lifecycle_click(self, click_type)
-        self.assertIsNotNone(self._target_id)
+        self.assertIsNotNone(self._target_qid)
         self.assertIsNotNone(self._target_name)
             
 class RPCConfirmationWindowTestWithTargetInvalid(unittest.TestCase):
@@ -232,6 +232,16 @@ class MockVm:
         self.name = name
         self.label = MockVmLabel(qid, 0x000000, color, dispvm)
 
+class MockComboEntry:
+    def __init__(self, text):
+        self._text = text
+        
+    def get_active_id(self):
+        return self._text
+
+    def get_text(self):
+        return self._text
+        
 class VMListModelerTest(VMListModelerMock, unittest.TestCase):
     def __init__(self, *args, **kwargs):
         unittest.TestCase.__init__(self, *args, **kwargs)
@@ -240,8 +250,39 @@ class VMListModelerTest(VMListModelerMock, unittest.TestCase):
     def test_list_gets_loaded(self):
         self.assertIsNotNone(self._list)
 
+    def test_valid_qube_name(self):
+        self.apply_model(Gtk.ComboBox())
+    
+        for name in [ "test-red1", "test-red2", "test-red3", 
+                      "test-target", "test-disp6" ]:
+                      
+            mock = MockComboEntry(name)
+            self.assertEquals(name, self._get_valid_qube_name(mock, mock))
+            self.assertEquals(name, self._get_valid_qube_name(None, mock))
+            self.assertEquals(name, self._get_valid_qube_name(mock, None))
+            self.assertIsNone(self._get_valid_qube_name(None, None))
+
+    def test_invalid_qube_name(self):
+        self.apply_model(Gtk.ComboBox())
+    
+        for name in [ "test-nonexistant", None, "", 1 ]:
+                      
+            mock = MockComboEntry(name)
+            self.assertIsNone(self._get_valid_qube_name(mock, mock))
+            self.assertIsNone(self._get_valid_qube_name(None, mock))
+            self.assertIsNone(self._get_valid_qube_name(mock, None))
+
     def test_apply_model(self):
         new_object = Gtk.ComboBox()
+        self.assertIsNone(new_object.get_model())
+        
+        self.apply_model(new_object)
+        
+        self.assertIsNotNone(new_object.get_model())
+
+    def test_apply_model_with_entry(self):
+        new_object = Gtk.ComboBox.new_with_entry()
+        
         self.assertIsNone(new_object.get_model())
         
         self.apply_model(new_object)

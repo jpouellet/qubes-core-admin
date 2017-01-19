@@ -49,19 +49,16 @@ class RPCConfirmationWindow():
         self._confirmed = False
         self._close()
 
-    def _update_ok_button_sensitivity(self, widget = None):
-        selection = self._rpc_combo_box.get_active_iter()
-        selected = (selection != None)
-
-        if (selected):
-            model = self._rpc_combo_box.get_model()
-            self._target_id = model[selection][0]
-            self._target_name = model[selection][1]
+    def _update_ok_button_sensitivity(self, data):
+        valid = (data != None)
+        
+        if valid:
+            (self._target_qid, self._target_name) = data
         else:
-            self._target_id = None
+            self._target_qid = None
             self._target_name = None
 
-        self._rpc_ok_button.set_sensitive(selected)
+        self._rpc_ok_button.set_sensitive(valid)
 
     def _show_error(self, error_message):
         self._error_message.set_text(error_message)
@@ -116,17 +113,17 @@ class RPCConfirmationWindow():
         
         self._error_bar.connect("response", self._close_error)
         
-        self._new_VM_list_modeler().apply_model(self._rpc_combo_box, 
-                                [ VMListModeler.ExcludeNameFilter("dom0"),
-                                  VMListModeler.ExcludeNameFilter(source) ])
+        list_modeler = self._new_VM_list_modeler()
+        
+        list_modeler.apply_model(self._rpc_combo_box, 
+                    [ VMListModeler.ExcludeNameFilter("dom0"),
+                      VMListModeler.ExcludeNameFilter(source) ],
+                    selection_trigger = self._update_ok_button_sensitivity,
+                    activation_trigger = self._clicked_ok )
         
         self._confirmed = None
 
         self._set_initial_target(source, target)
-        
-        self._rpc_combo_box.connect("changed", 
-                                    self._update_ok_button_sensitivity)
-        self._update_ok_button_sensitivity()
         
     def _close(self):
         self._rpc_window.close()
@@ -144,8 +141,9 @@ class RPCConfirmationWindow():
         self._show()
         
         if self._confirmed:
-            return {    'target_id': self._target_id, 
-                        'target_name': self._target_name }
+            return {    'target_name': self._target_name,
+                        'target_qid': self._target_qid
+                   }
         else:
             return False
             
@@ -191,9 +189,50 @@ class VMListModeler:
         finally:
             collection.unlock_db()
         
-    def apply_model(self, destination_object, vm_filter_list = [] ):
+    def _get_valid_qube_name(self, combo, entry_box):
+        name = None
+        
+        if combo and combo.get_active_id() in self._entries:
+            name = combo.get_active_id()
+        
+        if not name:
+            if entry_box and entry_box.get_text() in self._entries:
+                name = entry_box.get_text()
+            
+        return name
+        
+    def _combo_change(self, selection_trigger, combo, entry_box):
+        data = None
+        name = self._get_valid_qube_name(combo, entry_box)
+        
+        if name:
+            entry = self._entries[name]
+            
+            data = (entry['qid'], name)
+        
+            if entry_box:
+                entry_box.set_icon_from_pixbuf(
+                    Gtk.EntryIconPosition.PRIMARY, entry['icon'])
+        else:
+            if entry_box:
+                entry_box.set_icon_from_stock(
+                    Gtk.EntryIconPosition.PRIMARY, "gtk-find")
+               
+        if selection_trigger:
+            selection_trigger(data)
+        
+    def _entry_activate(self, activation_trigger, combo, entry_box):
+        name = self._get_valid_qube_name(combo, entry_box)
+        
+        if name:
+            activation_trigger(entry_box)
+        
+    def apply_model(self, destination_object, vm_filter_list = [], 
+                    selection_trigger = None, activation_trigger = None ):
         if isinstance(destination_object, Gtk.ComboBox):
             list_store = Gtk.ListStore(int, str, GdkPixbuf.Pixbuf)
+
+            self._entries = {}
 
             for vm in self._list:
                 matches = True
@@ -204,17 +243,53 @@ class VMListModeler:
                         break
                 
                 if matches:
-                    list_store.append([vm.qid, vm.name, self._get_icon(vm)])
+                    icon = self._get_icon(vm)
+                
+                    list_store.append([vm.qid, vm.name, icon])
+                    
+                    self._entries[vm.name] = {  'qid': vm.qid,
+                                                'icon': icon }
 
             destination_object.set_model(list_store)
+            destination_object.set_id_column(1)
 
-            renderer = Gtk.CellRendererPixbuf()
+            if destination_object.get_has_entry():
+                entry_box = destination_object.get_child()
+            
+                completion = Gtk.EntryCompletion()
+                completion.set_inline_selection(True)
+                completion.set_inline_completion(True)
+                completion.set_popup_completion(False)
+                completion.set_model(list_store)
+                completion.set_text_column(1)
+                
+                entry_box.set_completion(completion)
+                if activation_trigger:
+                    entry_box.connect("activate", 
+                        lambda entry: self._entry_activate(
+                            activation_trigger, destination_object, entry))
+                
+                # Removes the extra text column created b/c of the entry, 
+                # but unfortunately generates a GTK assertion error in console
+                destination_object.clear()
+            else:
+                entry_box = None
+            
+            renderer = Gtk.CellRendererPixbuf() 
             destination_object.pack_start(renderer, False)
             destination_object.add_attribute(renderer, "pixbuf", 2)
+            destination_object.set_entry_text_column(1)
             
             renderer = Gtk.CellRendererText()
             destination_object.pack_start(renderer, False)
             destination_object.add_attribute(renderer, "text", 1)
+            
+            changed_function = lambda combo: self._combo_change(
+                             selection_trigger, combo, entry_box)
+                             
+            destination_object.connect("changed", changed_function)
+            changed_function(destination_object)
+            
         else:
             raise TypeError(
                     "Only expecting Gtk.ComboBox objects to want our model.")
