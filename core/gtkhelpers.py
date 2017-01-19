@@ -32,14 +32,12 @@ class RPCConfirmationWindow():
     _source_id = { 'window': "RPCConfirmationWindow", 
                   'ok': "okButton", 
                   'cancel': "cancelButton", 
-                  'description': "rpcDescription", 
+                  'source': "sourceEntry", 
+                  'rpc_label' : "rpcLabel",
                   'target': "TargetCombo",
                   'error_bar': "ErrorBar",
                   'error_message': "ErrorMessage",
                 }
-    _text_description = "Allow domain '<b>%s</b>' to execute the <b>%s</b> "
-    _text_description += "operation?\n<small>Select the target domain and " 
-    _text_description += "confirm with 'OK'.</small>"
 
     def _clicked_ok(self, button):
         self._confirmed = True
@@ -97,8 +95,10 @@ class RPCConfirmationWindow():
                                             self._source_id['ok'])
         self._rpc_cancel_button = self._gtk_builder.get_object(
                                             self._source_id['cancel'])
-        self._rpc_description_label = self._gtk_builder.get_object(
-                                            self._source_id['description'])
+        self._rpc_label = self._gtk_builder.get_object(
+                                            self._source_id['rpc_label'])
+        self._source_entry = self._gtk_builder.get_object(
+                                            self._source_id['source'])
         self._rpc_combo_box = self._gtk_builder.get_object(
                                             self._source_id['target'])
         self._error_bar = self._gtk_builder.get_object(
@@ -106,8 +106,12 @@ class RPCConfirmationWindow():
         self._error_message = self._gtk_builder.get_object(
                                             self._source_id['error_message'])
         
-        self._rpc_description_label.set_markup(self._text_description 
-                                                    % (source, rpc_operation))
+        rpc_text  = rpc_operation[0:rpc_operation.find('.')+1] + "<b>"
+        rpc_text += rpc_operation[rpc_operation.find('.')+1:len(rpc_operation)] 
+        rpc_text += "</b>"
+        
+        self._rpc_label.set_markup(rpc_text)
+
         self._rpc_ok_button.connect("clicked", self._clicked_ok)
         self._rpc_cancel_button.connect("clicked", self._clicked_cancel)
         
@@ -120,6 +124,9 @@ class RPCConfirmationWindow():
                       VMListModeler.ExcludeNameFilter(source) ],
                     selection_trigger = self._update_ok_button_sensitivity,
                     activation_trigger = self._clicked_ok )
+                    
+        self._source_entry.set_text(source)
+        list_modeler.apply_icon(self._source_entry, source)
         
         self._confirmed = None
 
@@ -172,9 +179,11 @@ class GtkIconGetter:
 
 class VMListModeler:
     def __init__(self):
-        self._load_list()
         self._icon_getter = GtkIconGetter(32)
+        self._load_list()
+        self._create_entries()
         
+                  
     def _get_icon(self, vm):
         return self._icon_getter.get_icon(vm.label.icon)
         
@@ -189,6 +198,16 @@ class VMListModeler:
         finally:
             collection.unlock_db()
         
+    def _create_entries(self):
+        self._entries = {}
+        
+        for vm in self._list:
+            icon = self._get_icon(vm)
+                
+            self._entries[vm.name] = {  'qid': vm.qid,
+                                        'icon': icon }
+                    
+                    
     def _get_valid_qube_name(self, combo, entry_box):
         name = None
         
@@ -232,8 +251,6 @@ class VMListModeler:
         if isinstance(destination_object, Gtk.ComboBox):
             list_store = Gtk.ListStore(int, str, GdkPixbuf.Pixbuf)
 
-            self._entries = {}
-
             for vm in self._list:
                 matches = True
                 
@@ -243,12 +260,9 @@ class VMListModeler:
                         break
                 
                 if matches:
-                    icon = self._get_icon(vm)
-                
-                    list_store.append([vm.qid, vm.name, icon])
-                    
-                    self._entries[vm.name] = {  'qid': vm.qid,
-                                                'icon': icon }
+                    entry = self._entries[vm.name]
+
+                    list_store.append([entry['qid'], vm.name, entry['icon']])
 
             destination_object.set_model(list_store)
             destination_object.set_id_column(1)
@@ -293,7 +307,19 @@ class VMListModeler:
         else:
             raise TypeError(
                     "Only expecting Gtk.ComboBox objects to want our model.")
-        
+    
+    def apply_icon(self, entry, qube_name):
+        if isinstance(entry, Gtk.Entry):
+            if qube_name in self._entries:
+                entry.set_icon_from_pixbuf(
+                        Gtk.EntryIconPosition.PRIMARY, 
+                        self._entries[qube_name]['icon'])
+            else:
+                raise ValueError("The specified source qube does not exist!")
+        else:
+            raise TypeError(
+                    "Only expecting Gtk.Entry objects to want our icon.")
+                    
     class ExcludeNameFilter:
         def __init__(self, avoid_name):
             self._avoid_name = avoid_name

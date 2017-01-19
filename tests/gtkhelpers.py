@@ -57,18 +57,19 @@ class RPCConfirmationWindowTestBase(RPCConfirmationWindow):
         self.assertIsNotNone(self._rpc_window)
         self.assertIsNotNone(self._rpc_ok_button)
         self.assertIsNotNone(self._rpc_cancel_button)
-        self.assertIsNotNone(self._rpc_description_label)
+        self.assertIsNotNone(self._rpc_label)
+        self.assertIsNotNone(self._source_entry)
         self.assertIsNotNone(self._rpc_combo_box)
         self.assertIsNotNone(self._error_bar)
         self.assertIsNotNone(self._error_message)
     
     def test_is_showing_source(self):
         self.assertTrue(self.test_source_name in 
-                            self._rpc_description_label.get_text())
+                            self._source_entry.get_text())
     
     def test_is_showing_operation(self):
         self.assertTrue(self.test_rpc_operation in 
-                            self._rpc_description_label.get_text())
+                            self._rpc_label.get_text())
     
     def test_hide_dom0_and_source(self):
         self._rpc_combo_box
@@ -311,6 +312,35 @@ class VMListModelerTest(VMListModelerMock, unittest.TestCase):
                                     VMListModeler.ExcludeNameFilter(
                                         self._list[1].name) ])
         self.assertEquals(5, len(combo.get_model()))
+        
+    def test_apply_icon(self):
+        new_object = Gtk.Entry()
+        
+        self.assertIsNone(
+                new_object.get_icon_pixbuf(Gtk.EntryIconPosition.PRIMARY))
+                
+        self.apply_icon(new_object, "test-disp6")
+        
+        self.assertIsNotNone(
+                new_object.get_icon_pixbuf(Gtk.EntryIconPosition.PRIMARY))
+
+    def test_apply_icon_only_entry(self):
+        invalid_types = [ 1, "One", u'1', {'1': "one"}, Gtk.ComboBox()]
+        
+        for invalid_type in invalid_types:
+            with self.assertRaises(TypeError):
+                self.apply_icon(invalid_type, "test-disp6")
+        
+    def test_apply_icon_only_entry(self):
+        new_object = Gtk.Entry()
+        
+        for name in [ "test-red1", "test-red2", "test-red3", 
+                      "test-target", "test-disp6" ]:
+            self.apply_icon(new_object, name)
+        
+        for name in [ "test-nonexistant", None, "", 1 ]:
+            with self.assertRaises(ValueError):
+                self.apply_icon(new_object, name)
         
 class MockRPCConfirmationWindow(RPCConfirmationWindow):
     def _new_VM_list_modeler(self):

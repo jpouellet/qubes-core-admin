@@ -167,7 +167,8 @@
                         <property name="visible">True</property>
                         <property name="can_focus">False</property>
                         <property name="halign">start</property>
-                        <property name="label" translatable="yes">rpcDescription</property>
+                        <property name="label" translatable="yes">Do you want the following operation to execute?
+&lt;small&gt;Select the target domain and confirm with 'OK'&lt;/small&gt;</property>
                         <property name="use_markup">True</property>
                       </object>
                       <packing>
@@ -184,26 +185,30 @@
                   </packing>
                 </child>
                 <child>
-                  <object class="GtkBox" id="TargetBox">
+                  <object class="GtkGrid" id="grid1">
                     <property name="visible">True</property>
                     <property name="can_focus">False</property>
-                    <property name="spacing">6</property>
+                    <property name="margin_left">12</property>
+                    <property name="margin_bottom">6</property>
+                    <property name="row_spacing">12</property>
+                    <property name="column_spacing">6</property>
                     <child>
-                      <object class="GtkLabel" id="TargetLabel">
+                      <object class="GtkLabel" id="TargetDescLabel">
                         <property name="visible">True</property>
                         <property name="can_focus">False</property>
-                        <property name="label" translatable="yes">Target domain: </property>
+                        <property name="xalign">1</property>
+                        <property name="label" translatable="yes">Target:</property>
                       </object>
                       <packing>
-                        <property name="expand">False</property>
-                        <property name="fill">True</property>
-                        <property name="position">0</property>
+                        <property name="left_attach">0</property>
+                        <property name="top_attach">2</property>
                       </packing>
                     </child>
                     <child>
                       <object class="GtkComboBox" id="TargetCombo">
                         <property name="visible">True</property>
                         <property name="can_focus">False</property>
+                        <property name="hexpand">True</property>
                         <property name="has_entry">True</property>
                         <child internal-child="entry">
                           <object class="GtkEntry" id="TargetComboEntry">
@@ -213,9 +218,58 @@
                         </child>
                       </object>
                       <packing>
-                        <property name="expand">True</property>
-                        <property name="fill">True</property>
-                        <property name="position">1</property>
+                        <property name="left_attach">1</property>
+                        <property name="top_attach">2</property>
+                      </packing>
+                    </child>
+                    <child>
+                      <object class="GtkLabel" id="sourceDescLabel">
+                        <property name="visible">True</property>
+                        <property name="can_focus">False</property>
+                        <property name="xalign">1</property>
+                        <property name="label" translatable="yes">Source:</property>
+                      </object>
+                      <packing>
+                        <property name="left_attach">0</property>
+                        <property name="top_attach">0</property>
+                      </packing>
+                    </child>
+                    <child>
+                      <object class="GtkEntry" id="sourceEntry">
+                        <property name="visible">True</property>
+                        <property name="can_focus">False</property>
+                        <property name="editable">False</property>
+                        <property name="text" translatable="yes">source</property>
+                        <property name="primary_icon_activatable">False</property>
+                      </object>
+                      <packing>
+                        <property name="left_attach">1</property>
+                        <property name="top_attach">0</property>
+                      </packing>
+                    </child>
+                    <child>
+                      <object class="GtkLabel" id="operationDescLabel">
+                        <property name="visible">True</property>
+                        <property name="can_focus">False</property>
+                        <property name="xalign">1</property>
+                        <property name="label" translatable="yes">Operation:</property>
+                      </object>
+                      <packing>
+                        <property name="left_attach">0</property>
+                        <property name="top_attach">1</property>
+                      </packing>
+                    </child>
+                    <child>
+                      <object class="GtkLabel" id="rpcLabel">
+                        <property name="visible">True</property>
+                        <property name="can_focus">False</property>
+                        <property name="xalign">0</property>
+                        <property name="label" translatable="yes">qubes.&lt;b&gt;MyOperation&lt;/b&gt;</property>
+                        <property name="use_markup">True</property>
+                      </object>
+                      <packing>
+                        <property name="left_attach">1</property>
+                        <property name="top_attach">1</property>
                       </packing>
                     </child>
                   </object>
