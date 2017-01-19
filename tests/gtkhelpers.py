@@ -258,10 +258,22 @@ class VMListModelerTest(VMListModelerMock, unittest.TestCase):
                       "test-target", "test-disp6" ]:
                       
             mock = MockComboEntry(name)
-            self.assertEquals(name, self._get_valid_qube_name(mock, mock))
-            self.assertEquals(name, self._get_valid_qube_name(None, mock))
-            self.assertEquals(name, self._get_valid_qube_name(mock, None))
-            self.assertIsNone(self._get_valid_qube_name(None, None))
+            self.assertEquals(name, self._get_valid_qube_name(mock, mock, []))
+            self.assertEquals(name, self._get_valid_qube_name(None, mock, []))
+            self.assertEquals(name, self._get_valid_qube_name(mock, None, []))
+            self.assertIsNone(self._get_valid_qube_name(None, None, []))
+
+    def test_valid_qube_name_exceptions(self):
+        list_exc = ["test-disp6", "test-red2"]
+    
+        self.apply_model(Gtk.ComboBox(), 
+            [VMListModeler.ExcludeNameFilter(list_exc[0], list_exc[1])])
+    
+        for name in list_exc:
+            mock = MockComboEntry(name)
+            self.assertIsNone(self._get_valid_qube_name(mock, mock, list_exc))
+            self.assertIsNone(self._get_valid_qube_name(None, mock, list_exc))
+            self.assertIsNone(self._get_valid_qube_name(mock, None, list_exc))
 
     def test_invalid_qube_name(self):
         self.apply_model(Gtk.ComboBox())
@@ -269,9 +281,9 @@ class VMListModelerTest(VMListModelerMock, unittest.TestCase):
         for name in [ "test-nonexistant", None, "", 1 ]:
                       
             mock = MockComboEntry(name)
-            self.assertIsNone(self._get_valid_qube_name(mock, mock))
-            self.assertIsNone(self._get_valid_qube_name(None, mock))
-            self.assertIsNone(self._get_valid_qube_name(mock, None))
+            self.assertIsNone(self._get_valid_qube_name(mock, mock, []))
+            self.assertIsNone(self._get_valid_qube_name(None, mock, []))
+            self.assertIsNone(self._get_valid_qube_name(mock, None, []))
 
     def test_apply_model(self):
         new_object = Gtk.ComboBox()

@@ -208,21 +208,26 @@ class VMListModeler:
                                         'icon': icon }
                     
                     
-    def _get_valid_qube_name(self, combo, entry_box):
+    def _get_valid_qube_name(self, combo, entry_box, exclusions):
         name = None
         
-        if combo and combo.get_active_id() in self._entries:
-            name = combo.get_active_id()
+        if combo and combo.get_active_id():
+            selected = combo.get_active_id()
+            
+            if selected in self._entries and selected not in exclusions:
+                name = selected
         
-        if not name:
-            if entry_box and entry_box.get_text() in self._entries:
-                name = entry_box.get_text()
+        if not name and entry_box:
+            typed = entry_box.get_text()
+        
+            if typed in self._entries and typed not in exclusions:
+                name = typed
             
         return name
         
-    def _combo_change(self, selection_trigger, combo, entry_box):
+    def _combo_change(self, selection_trigger, combo, entry_box, exclusions):
         data = None
-        name = self._get_valid_qube_name(combo, entry_box)
+        name = self._get_valid_qube_name(combo, entry_box, exclusions)
         
         if name:
             entry = self._entries[name]
@@ -240,8 +245,8 @@ class VMListModeler:
         if selection_trigger:
             selection_trigger(data)
         
-    def _entry_activate(self, activation_trigger, combo, entry_box):
-        name = self._get_valid_qube_name(combo, entry_box)
+    def _entry_activate(self, activation_trigger, combo, entry_box, exclusions):
+        name = self._get_valid_qube_name(combo, entry_box, exclusions)
         
         if name:
             activation_trigger(entry_box)
@@ -251,6 +256,7 @@ class VMListModeler:
         if isinstance(destination_object, Gtk.ComboBox):
             list_store = Gtk.ListStore(int, str, GdkPixbuf.Pixbuf)
 
+            exclusions = []
             for vm in self._list:
                 matches = True
                 
@@ -263,6 +269,8 @@ class VMListModeler:
                     entry = self._entries[vm.name]
 
                     list_store.append([entry['qid'], vm.name, entry['icon']])
+                else:
+                    exclusions += [vm.name]
 
             destination_object.set_model(list_store)
             destination_object.set_id_column(1)
@@ -281,7 +289,10 @@ class VMListModeler:
                 if activation_trigger:
                     entry_box.connect("activate", 
                         lambda entry: self._entry_activate(
-                            activation_trigger, destination_object, entry))
+                            activation_trigger, 
+                            destination_object, 
+                            entry, 
+                            exclusions))
                 
                 # Removes the extra text column created b/c of the entry, 
                 # but unfortunately generates a GTK assertion error in console
@@ -299,7 +310,10 @@ class VMListModeler:
             destination_object.add_attribute(renderer, "text", 1)
             
             changed_function = lambda combo: self._combo_change(
-                             selection_trigger, combo, entry_box)
+                             selection_trigger, 
+                             combo, 
+                             entry_box,
+                             exclusions)
                              
             destination_object.connect("changed", changed_function)
             changed_function(destination_object)
@@ -321,9 +335,9 @@ class VMListModeler:
                     "Only expecting Gtk.Entry objects to want our icon.")
                     
     class ExcludeNameFilter:
-        def __init__(self, avoid_name):
-            self._avoid_name = avoid_name
+        def __init__(self, *avoid_names):
+            self._avoid_names = avoid_names
         
         def matches(self, vm):
-            return vm.name != self._avoid_name
+            return vm.name not in self._avoid_names
 
