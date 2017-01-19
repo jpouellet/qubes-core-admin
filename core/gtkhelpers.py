@@ -47,6 +47,12 @@ class RPCConfirmationWindow():
         self._confirmed = False
         self._close()
 
+    def _key_pressed(self, window, key):
+        # Check if the ESC key was pressed (defined in gdkkeysyms.h)
+        if key.keyval == 0xFF1B: 
+            self._confirmed = False
+            self._close()
+
     def _update_ok_button_sensitivity(self, data):
         valid = (data != None)
         
@@ -115,6 +121,7 @@ class RPCConfirmationWindow():
         self._rpc_ok_button.connect("clicked", self._clicked_ok)
         self._rpc_cancel_button.connect("clicked", self._clicked_cancel)
         
+        self._rpc_window.connect("key-press-event", self._key_pressed)
         self._error_bar.connect("response", self._close_error)
         
         list_modeler = self._new_VM_list_modeler()
