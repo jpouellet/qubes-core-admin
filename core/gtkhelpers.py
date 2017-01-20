@@ -24,7 +24,7 @@ import gi, os
 gi.require_version('Gtk', '3.0')
 from gi.repository import Gtk, GdkPixbuf
 
-glade_directory = os.path.join(os.path.dirname(__file__), "gtk")
+glade_directory = os.path.join(os.path.dirname(__file__), "glade")
 
 class GtkIconGetter:
     def __init__(self, size):
