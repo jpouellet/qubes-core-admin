@@ -137,8 +137,9 @@ class RPCConfirmationWindow():
         
     def _close(self):
         self._rpc_window.close()
-		
+
     def _show(self):
+        self._rpc_window.set_keep_above(True)
         self._rpc_window.connect("delete-event", Gtk.main_quit)
         self._rpc_window.show_all()
 		
