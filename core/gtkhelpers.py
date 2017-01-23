@@ -45,7 +45,7 @@ class GtkIconGetter:
 
 class VMListModeler:
     def __init__(self):
-        self._icon_getter = GtkIconGetter(32)
+        self._icon_getter = GtkIconGetter(16)
         self._load_list()
         self._create_entries()
         
@@ -148,11 +148,16 @@ class VMListModeler:
             
             if destination_object.get_has_entry():
                 entry_box = destination_object.get_child()
-            
-                completion = Gtk.EntryCompletion()
+                
+                area = Gtk.CellAreaBox()
+                area.pack_start(icon_column, False, False, False)
+                area.add_attribute(icon_column, "pixbuf", 2)
+                
+                completion = Gtk.EntryCompletion.new_with_area(area)
                 completion.set_inline_selection(True)
                 completion.set_inline_completion(True)
-                completion.set_popup_completion(False)
+                completion.set_popup_completion(True)
+                completion.set_popup_single_match(False)
                 completion.set_model(list_store)
                 completion.set_text_column(1)
                 
