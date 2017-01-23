@@ -22,7 +22,7 @@
 import qubes
 import gi, os
 gi.require_version('Gtk', '3.0')
-from gi.repository import Gtk, GdkPixbuf
+from gi.repository import Gtk, Gdk, GdkPixbuf
 
 glade_directory = os.path.join(os.path.dirname(__file__), "glade")
 
@@ -207,3 +207,23 @@ class VMListModeler:
         def matches(self, vm):
             return vm.name not in self._avoid_names
 
+class FocusStealingButtonDisabler:
+    def __init__(self, window, *buttons):
+        self._window = window
+        self._buttons = buttons
+        
+        self._window_focused = False
+        self._window.connect("window-state-event", self._window_state_event)
+        
+    def _window_state_event(self, window, event):
+        changed_focus = event.changed_mask & Gdk.WindowState.FOCUSED 
+        window_focus = event.new_window_state & Gdk.WindowState.FOCUSED
+        
+        if changed_focus:
+            self._window_focused = (window_focus != 0)
+            
+        # Propagate event further
+        return False
+        
+    def can_perform_action(self):
+        return self._window_focused

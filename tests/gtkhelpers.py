@@ -20,6 +20,7 @@
 #
 
 import unittest, sys
+import time
 from core.gtkhelpers import *
             
 class VMListModelerMock(VMListModeler):
@@ -55,6 +56,27 @@ class MockComboEntry:
 
     def get_text(self):
         return self._text
+        
+class GtkTestCase(unittest.TestCase):
+    def __init__(self, *args, **kwargs):
+        unittest.TestCase.__init__(self, *args, **kwargs)
+        
+    def flush_gtk_events(wait_seconds = 0):
+        start = time.time()
+        events = 0
+        
+        while Gtk.events_pending():
+            Gtk.main_iteration_do(blocking = False)
+            
+            events = events + 1
+        
+        time_length = time.time() - start
+        remaining_wait = wait_seconds - time_length
+        
+        if (remaining_wait > 0):
+            time.sleep(remaining_wait)
+            
+        return (events, time_length)
         
 class VMListModelerTest(VMListModelerMock, unittest.TestCase):
     def __init__(self, *args, **kwargs):
@@ -166,6 +188,13 @@ class VMListModelerTest(VMListModelerMock, unittest.TestCase):
         for name in [ "test-nonexistant", None, "", 1 ]:
             with self.assertRaises(ValueError):
                 self.apply_icon(new_object, name)
+        
+class FocusStealingButtonDisablerTest(FocusStealingButtonDisabler, 
+                                        unittest.TestCase):
+    def __init__(self, *args, **kwargs):
+        unittest.TestCase.__init__(self, *args, **kwargs)
+        FocusStealingButtonDisabler.__init__()
+        
         
 if __name__=='__main__':
     unittest.main()

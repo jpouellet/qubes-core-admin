@@ -19,7 +19,7 @@
 # 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 #
 
-from gtkhelpers import VMListModeler, glade_directory
+from gtkhelpers import VMListModeler, FocusStealingButtonDisabler, glade_directory
 from gi.repository import Gtk
 import os
 
@@ -36,18 +36,21 @@ class RPCConfirmationWindow():
                 }
 
     def _clicked_ok(self, button):
-        self._confirmed = True
-        self._close()
+        if self._can_perform_action():
+            self._confirmed = True
+            self._close()
 	    
     def _clicked_cancel(self, button):
-        self._confirmed = False
-        self._close()
-
-    def _key_pressed(self, window, key):
-        # Check if the ESC key was pressed (defined in gdkkeysyms.h)
-        if key.keyval == 0xFF1B: 
+        if self._can_perform_action():
             self._confirmed = False
             self._close()
+
+    def _key_pressed(self, window, key):
+        if self._can_perform_action():
+            # Check if the ESC key was pressed (defined in gdkkeysyms.h)
+            if key.keyval == 0xFF1B: 
+                self._confirmed = False
+                self._close()
 
     def _update_ok_button_sensitivity(self, data):
         valid = (data != None)
@@ -87,6 +90,16 @@ class RPCConfirmationWindow():
 
                 if not found:
                     self._show_error("Domain '%s' doesn't exist." % target)
+                    
+    def _can_perform_action(self):
+        return self._focus_helper.can_perform_action()
+                    
+    def _connect_events(self):
+        self._rpc_window.connect("key-press-event",self._key_pressed)
+        self._rpc_ok_button.connect("clicked", self._clicked_ok)
+        self._rpc_cancel_button.connect("clicked", self._clicked_cancel)
+                                
+        self._error_bar.connect("response", self._close_error)
 
     def __init__(self, source, rpc_operation, target = None):
         self._gtk_builder = Gtk.Builder()
@@ -114,12 +127,6 @@ class RPCConfirmationWindow():
         
         self._rpc_label.set_markup(rpc_text)
 
-        self._rpc_ok_button.connect("clicked", self._clicked_ok)
-        self._rpc_cancel_button.connect("clicked", self._clicked_cancel)
-        
-        self._rpc_window.connect("key-press-event", self._key_pressed)
-        self._error_bar.connect("response", self._close_error)
-        
         list_modeler = self._new_VM_list_modeler()
         
         list_modeler.apply_model(self._rpc_combo_box, 
@@ -135,9 +142,16 @@ class RPCConfirmationWindow():
 
         self._set_initial_target(source, target)
         
+        self._connect_events()
+        
+        self._focus_helper = FocusStealingButtonDisabler(
+                                    self._rpc_window, 
+                                    self._rpc_ok_button,
+                                    self._rpc_cancel_button)
+        
     def _close(self):
         self._rpc_window.close()
-
+        
     def _show(self):
         self._rpc_window.set_keep_above(True)
         self._rpc_window.connect("delete-event", Gtk.main_quit)

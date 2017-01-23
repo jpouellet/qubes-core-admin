@@ -40,6 +40,9 @@ class RPCConfirmationWindowTestBase(RPCConfirmationWindow):
                                         self.test_rpc_operation,
                                         self.test_target_name)
 
+    def _can_perform_action(self):
+        return True
+
     def _close(self):
         self.test_called_close = True
         
