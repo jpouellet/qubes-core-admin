@@ -22,7 +22,7 @@
 import qubes
 import gi, os
 gi.require_version('Gtk', '3.0')
-from gi.repository import Gtk, Gdk, GdkPixbuf
+from gi.repository import Gtk, Gdk, GdkPixbuf, GObject
 
 glade_directory = os.path.join(os.path.dirname(__file__), "glade")
 
@@ -212,23 +212,76 @@ class VMListModeler:
         def matches(self, vm):
             return vm.name not in self._avoid_names
 
-class FocusStealingButtonDisabler:
-    def __init__(self, window, *buttons):
-        self._window = window
-        self._buttons = buttons
+class GtkOneTimerHelper:
+    def __init__(self, wait_seconds):
+        self._wait_seconds = wait_seconds
+        self._current_timer_id = 0
+        self._timer_completed = False
         
-        self._window_focused = False
+    def _invalidate_timer_completed(self):
+        self._timer_completed = False
+        
+    def _invalidate_current_timer(self):
+        self._current_timer_id += 1
+        
+    def _timer_check_run(self, timer_id):
+        if self._current_timer_id == timer_id:
+            self._timer_run(timer_id)
+            self._timer_completed = True
+        else:
+            pass
+
+    def _timer_run(self, timer_id):
+        raise NotImplementedError("Not yet implemented")
+
+    def _timer_schedule(self):
+        self._invalidate_current_timer()
+        GObject.timeout_add(int(round(self._wait_seconds * 1000)), 
+                            self._timer_check_run, 
+                            self._current_timer_id)
+                            
+    def _timer_has_completed(self):
+        return self._timer_completed
+
+class FocusStealingHelper(GtkOneTimerHelper):
+    def __init__(self, window, target_button, wait_seconds = 1):
+        GtkOneTimerHelper.__init__(self, wait_seconds)
+        self._window = window
+        self._target_button = target_button
+        
         self._window.connect("window-state-event", self._window_state_event)
+
+        self._target_sensitivity = False
+        self._target_button.set_sensitive(self._target_sensitivity)
+        
+    def _window_changed_focus(self, window_is_focused):
+        self._target_button.set_sensitive(False)
+        self._invalidate_timer_completed()
+    
+        if window_is_focused:
+            self._timer_schedule()
+        else:
+            self._invalidate_current_timer()
         
     def _window_state_event(self, window, event):
         changed_focus = event.changed_mask & Gdk.WindowState.FOCUSED 
         window_focus = event.new_window_state & Gdk.WindowState.FOCUSED
         
         if changed_focus:
-            self._window_focused = (window_focus != 0)
+            self._window_changed_focus(window_focus != 0)
             
         # Propagate event further
         return False
         
+    def _timer_run(self, timer_id):
+        self._target_button.set_sensitive(self._target_sensitivity)
+        
+    def request_sensitivity(self, sensitivity):
+        if self._timer_has_completed() or not sensitivity:
+            self._target_button.set_sensitive(sensitivity)
+
+        self._target_sensitivity = sensitivity
+        
     def can_perform_action(self):
-        return self._window_focused
+        return self._timer_has_completed()
+        

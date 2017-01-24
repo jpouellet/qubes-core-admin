@@ -60,23 +60,29 @@ class MockComboEntry:
 class GtkTestCase(unittest.TestCase):
     def __init__(self, *args, **kwargs):
         unittest.TestCase.__init__(self, *args, **kwargs)
+        self._smallest_wait = 0.01
         
-    def flush_gtk_events(wait_seconds = 0):
+    def flush_gtk_events(self, wait_seconds = 0):
         start = time.time()
-        events = 0
+        iterations = 0
+        remaining_wait = wait_seconds
+        time_length = 0
         
-        while Gtk.events_pending():
-            Gtk.main_iteration_do(blocking = False)
+        if wait_seconds < 0:
+            raise ValueError("Only non-negative intervals are allowed.")
+        
+        while remaining_wait >= 0:
+            while Gtk.events_pending():
+                Gtk.main_iteration_do(blocking = False)
+                iterations += 1
+
+            time_length = time.time() - start
+            remaining_wait = wait_seconds - time_length
+        
+            if (remaining_wait > 0):
+                time.sleep(self._smallest_wait)
             
-            events = events + 1
-        
-        time_length = time.time() - start
-        remaining_wait = wait_seconds - time_length
-        
-        if (remaining_wait > 0):
-            time.sleep(remaining_wait)
-            
-        return (events, time_length)
+        return (iterations, time_length)
         
 class VMListModelerTest(VMListModelerMock, unittest.TestCase):
     def __init__(self, *args, **kwargs):
@@ -189,12 +195,200 @@ class VMListModelerTest(VMListModelerMock, unittest.TestCase):
             with self.assertRaises(ValueError):
                 self.apply_icon(new_object, name)
         
-class FocusStealingButtonDisablerTest(FocusStealingButtonDisabler, 
-                                        unittest.TestCase):
+class GtkOneTimerHelperTest(GtkOneTimerHelper, GtkTestCase):
     def __init__(self, *args, **kwargs):
-        unittest.TestCase.__init__(self, *args, **kwargs)
-        FocusStealingButtonDisabler.__init__()
+        GtkTestCase.__init__(self, *args, **kwargs)
         
+        self._test_time = 0.1
+        
+        GtkOneTimerHelper.__init__(self, self._test_time)
+        self._run_timers = []
+        
+    def _timer_run(self, timer_id):
+        self._run_timers.append(timer_id)
+        
+    def test_nothing_runs_automatically(self): 
+        self.flush_gtk_events(self._test_time*2)
+        self.assertEquals([], self._run_timers)
+        self.assertEquals(0, self._current_timer_id)
+        self.assertFalse(self._timer_has_completed())
+        
+    def test_schedule_one_task(self): 
+        self._timer_schedule()
+        self.flush_gtk_events(self._test_time*2)
+        self.assertEquals([1], self._run_timers)
+        self.assertEquals(1, self._current_timer_id)
+        self.assertTrue(self._timer_has_completed())
+    
+    def test_invalidate_completed(self): 
+        self._timer_schedule()
+        self.flush_gtk_events(self._test_time*2)
+        self.assertEquals([1], self._run_timers)
+        self.assertEquals(1, self._current_timer_id)
+        
+        self.assertTrue(self._timer_has_completed())
+        self._invalidate_timer_completed()
+        self.assertFalse(self._timer_has_completed())
+    
+    def test_schedule_and_cancel_one_task(self): 
+        self._timer_schedule()
+        self._invalidate_current_timer()
+        self.flush_gtk_events(self._test_time*2)
+        self.assertEquals([], self._run_timers)
+        self.assertEquals(2, self._current_timer_id)   
+        self.assertFalse(self._timer_has_completed())
+        
+    def test_two_tasks(self): 
+        self._timer_schedule()
+        self.flush_gtk_events(self._test_time/4)
+        self._timer_schedule()
+        self.flush_gtk_events(self._test_time*2)
+        self.assertEquals([2], self._run_timers)
+        self.assertEquals(2, self._current_timer_id)
+        self.assertTrue(self._timer_has_completed())
+        
+    def test_more_tasks(self): 
+        for num in range(1,10):
+            self._timer_schedule()
+            self.flush_gtk_events(self._test_time/4)
+        self.flush_gtk_events(self._test_time*1.75)
+        self.assertEquals([9], self._run_timers)
+        self.assertEquals(9, self._current_timer_id) 
+        self.assertTrue(self._timer_has_completed())
+   
+    def test_more_tasks_cancel(self): 
+        for num in range(1,10):
+            self._timer_schedule()
+            self.flush_gtk_events(self._test_time/4)
+        self._invalidate_current_timer()
+        self.flush_gtk_events(self._test_time*1.75)
+        self.assertEquals([], self._run_timers)
+        self.assertEquals(10, self._current_timer_id) 
+        self.assertFalse(self._timer_has_completed())
+     
+    def test_subsequent_tasks(self): 
+        self._timer_schedule() #1
+        self.flush_gtk_events(self._test_time*2)
+        self.assertEquals([1], self._run_timers)
+        self.assertEquals(1, self._current_timer_id)
+        self.assertTrue(self._timer_has_completed())
+        
+        self._timer_schedule() #2
+        self.flush_gtk_events(self._test_time*2)
+        self.assertEquals([1,2], self._run_timers)
+        self.assertEquals(2, self._current_timer_id)
+        self.assertTrue(self._timer_has_completed())
+        
+        self._invalidate_timer_completed()
+        self._timer_schedule() #3
+        self._invalidate_current_timer() #4
+        self.flush_gtk_events(self._test_time*2)
+        self.assertEquals([1,2], self._run_timers)
+        self.assertEquals(4, self._current_timer_id)
+        self.assertFalse(self._timer_has_completed())
+        
+        self._timer_schedule() #5
+        self.flush_gtk_events(self._test_time*2)
+        self.assertEquals([1,2,5], self._run_timers)
+        self.assertEquals(5, self._current_timer_id)
+        self.assertTrue(self._timer_has_completed())
+        
+class FocusStealingHelperTest(FocusStealingHelper, GtkTestCase):
+    def __init__(self, *args, **kwargs):
+        GtkTestCase.__init__(self, *args, **kwargs)
+        
+        self._test_time = 0.1
+        self._test_button = Gtk.Button()
+        self._test_window = Gtk.Window()
+                
+        FocusStealingHelper.__init__(self, self._test_window,
+                                     self._test_button, self._test_time)
+                                     
+    def test_nothing_runs_automatically(self): 
+        self.assertFalse(self.can_perform_action())
+        self.flush_gtk_events(self._test_time*2)
+        self.assertFalse(self.can_perform_action())
+        self.assertFalse(self._test_button.get_sensitive())
+        
+    def test_nothing_runs_automatically_with_request(self): 
+        self.request_sensitivity(True)
+        self.assertFalse(self.can_perform_action())
+        self.flush_gtk_events(self._test_time*2)
+        self.assertFalse(self.can_perform_action())
+        self.assertFalse(self._test_button.get_sensitive())
+        
+    def _simulate_focus(self, focused):
+        self._window_changed_focus(focused)
+        
+    def test_focus_with_request(self): 
+        self.request_sensitivity(True)
+        self._simulate_focus(True)
+        self.flush_gtk_events(self._test_time*2)
+        self.assertTrue(self.can_perform_action())
+        self.assertTrue(self._test_button.get_sensitive())
+        
+    def test_focus_with_late_request(self): 
+        self._simulate_focus(True)
+        self.flush_gtk_events(self._test_time*2)
+        self.assertTrue(self.can_perform_action())
+        self.assertFalse(self._test_button.get_sensitive())
+        
+        self.request_sensitivity(True)
+        self.assertTrue(self._test_button.get_sensitive())
+        
+    def test_immediate_defocus(self): 
+        self.request_sensitivity(True)
+        self._simulate_focus(True)
+        self._simulate_focus(False)
+        self.flush_gtk_events(self._test_time*2)
+        self.assertFalse(self.can_perform_action())
+        self.assertFalse(self._test_button.get_sensitive())
+        
+    def test_focus_then_unfocus(self): 
+        self.request_sensitivity(True)
+        self._simulate_focus(True)
+        self.flush_gtk_events(self._test_time*2)
+        self.assertTrue(self.can_perform_action())
+        self.assertTrue(self._test_button.get_sensitive())
+        
+        self._simulate_focus(False)
+        self.assertFalse(self.can_perform_action())
+        self.assertFalse(self._test_button.get_sensitive())
+        
+    def test_focus_cycle(self): 
+        self.request_sensitivity(True)
+        
+        self._simulate_focus(True)
+        self.flush_gtk_events(self._test_time*2)
+        self.assertTrue(self.can_perform_action())
+        self.assertTrue(self._test_button.get_sensitive())
+        
+        self._simulate_focus(False)
+        self.assertFalse(self.can_perform_action())
+        self.assertFalse(self._test_button.get_sensitive())
+        
+        self._simulate_focus(True)
+        self.assertFalse(self.can_perform_action())
+        self.assertFalse(self._test_button.get_sensitive())
+        
+        self.flush_gtk_events(self._test_time*2)
+        self.assertTrue(self.can_perform_action())
+        self.assertTrue(self._test_button.get_sensitive())
+        
+        self.request_sensitivity(False)
+        self.assertTrue(self.can_perform_action())
+        self.assertFalse(self._test_button.get_sensitive())
+        
+        self._simulate_focus(False)
+        self.assertFalse(self.can_perform_action())
+        
+        self._simulate_focus(True)
+        self.assertFalse(self.can_perform_action())
+        self.assertFalse(self._test_button.get_sensitive())
+        
+        self.flush_gtk_events(self._test_time*2)
+        self.assertTrue(self.can_perform_action())
+        self.assertFalse(self._test_button.get_sensitive())
         
 if __name__=='__main__':
     unittest.main()

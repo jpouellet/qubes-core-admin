@@ -229,7 +229,8 @@ if __name__=='__main__':
         print "Usage: " + __file__ + " [-t|-w]"
     
     if window:
-        print MockRPCConfirmationWindow(
-                        "test-source", "qubes.Filecopy")._confirm_rpc()
+        print MockRPCConfirmationWindow("test-source", 
+                                        "qubes.Filecopy", 
+                                        "test-red1")._confirm_rpc()
     elif test:
         unittest.main(argv = [sys.argv[0]])

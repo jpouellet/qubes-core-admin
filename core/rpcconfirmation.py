@@ -19,7 +19,7 @@
 # 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 #
 
-from gtkhelpers import VMListModeler, FocusStealingButtonDisabler, glade_directory
+from gtkhelpers import VMListModeler, FocusStealingHelper, glade_directory
 from gi.repository import Gtk
 import os
 
@@ -61,7 +61,7 @@ class RPCConfirmationWindow():
             self._target_qid = None
             self._target_name = None
 
-        self._rpc_ok_button.set_sensitive(valid)
+        self._focus_helper.request_sensitivity(valid)
 
     def _show_error(self, error_message):
         self._error_message.set_text(error_message)
@@ -120,6 +120,9 @@ class RPCConfirmationWindow():
                                             self._source_id['error_bar'])
         self._error_message = self._gtk_builder.get_object(
                                             self._source_id['error_message'])
+        self._focus_helper = FocusStealingHelper(
+                    self._rpc_window, 
+                    self._rpc_ok_button)
         
         rpc_text  = rpc_operation[0:rpc_operation.find('.')+1] + "<b>"
         rpc_text += rpc_operation[rpc_operation.find('.')+1:len(rpc_operation)] 
@@ -141,13 +144,8 @@ class RPCConfirmationWindow():
         self._confirmed = None
 
         self._set_initial_target(source, target)
-        
+
         self._connect_events()
-        
-        self._focus_helper = FocusStealingButtonDisabler(
-                                    self._rpc_window, 
-                                    self._rpc_ok_button,
-                                    self._rpc_cancel_button)
         
     def _close(self):
         self._rpc_window.close()
