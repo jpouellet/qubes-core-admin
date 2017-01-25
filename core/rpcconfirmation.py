@@ -101,7 +101,8 @@ class RPCConfirmationWindow():
                                 
         self._error_bar.connect("response", self._close_error)
 
-    def __init__(self, source, rpc_operation, target = None):
+    def __init__(self, source, rpc_operation, target = None, 
+                 focus_stealing_seconds = 1):
         self._gtk_builder = Gtk.Builder()
         self._gtk_builder.add_from_file(self._source_file)
         self._rpc_window = self._gtk_builder.get_object(
@@ -122,7 +123,8 @@ class RPCConfirmationWindow():
                                             self._source_id['error_message'])
         self._focus_helper = FocusStealingHelper(
                     self._rpc_window, 
-                    self._rpc_ok_button)
+                    self._rpc_ok_button, 
+                    focus_stealing_seconds)
         
         rpc_text  = rpc_operation[0:rpc_operation.find('.')+1] + "<b>"
         rpc_text += rpc_operation[rpc_operation.find('.')+1:len(rpc_operation)] 

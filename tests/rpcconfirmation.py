@@ -21,13 +21,15 @@
 
 import unittest, sys
 from core.rpcconfirmation import *
-from gtkhelpers import VMListModelerMock
+from gtkhelpers import VMListModelerMock, GtkTestCase
 
 class RPCConfirmationWindowTestBase(RPCConfirmationWindow):
     def __init__(self, source_name, rpc_operation, target_name):
         self.test_source_name = source_name
         self.test_rpc_operation = rpc_operation
         self.test_target_name = target_name
+        
+        self._test_time = 0.1
         
         self.test_called_close = False
         self.test_called_show = False
@@ -36,9 +38,10 @@ class RPCConfirmationWindowTestBase(RPCConfirmationWindow):
         self.test_clicked_cancel = False
         
         RPCConfirmationWindow.__init__(self, 
-                                        self.test_source_name, 
-                                        self.test_rpc_operation,
-                                        self.test_target_name)
+                                       self.test_source_name, 
+                                       self.test_rpc_operation,
+                                       self.test_target_name,
+                                       focus_stealing_seconds = self._test_time)
 
     def _can_perform_action(self):
         return True
@@ -127,8 +130,11 @@ class RPCConfirmationWindowTestBase(RPCConfirmationWindow):
         self.assertFalse(self.test_called_close)
         self.assertFalse(self.test_called_show)        
         
-        self.assert_initial_state()
-                
+        self.assert_initial_state(False)
+        self._focus_helper._window_changed_focus(True)
+        self.flush_gtk_events(self._test_time*2)
+        self.assert_initial_state(True)
+        
         try:
             # We expect the call to exit immediately, since no window is opened 
             self._confirm_rpc()
@@ -138,7 +144,7 @@ class RPCConfirmationWindowTestBase(RPCConfirmationWindow):
         self.assertFalse(self.test_called_close)
         self.assertTrue(self.test_called_show)        
         
-        self.assert_initial_state()
+        self.assert_initial_state(True)
         
         if select_target:
             self._rpc_combo_box.set_active(1)
@@ -157,13 +163,13 @@ class RPCConfirmationWindowTestBase(RPCConfirmationWindow):
     def _new_VM_list_modeler(self):
         return VMListModelerMock()
     
-class RPCConfirmationWindowTestNoTarget(RPCConfirmationWindowTestBase, unittest.TestCase):
+class RPCConfirmationWindowTestNoTarget(RPCConfirmationWindowTestBase, GtkTestCase):
     def __init__(self, *args, **kwargs):
-        unittest.TestCase.__init__(self, *args, **kwargs)
+        GtkTestCase.__init__(self, *args, **kwargs)
         RPCConfirmationWindowTestBase.__init__(self, 
                             "test-source", "test.Operation", None)
         
-    def assert_initial_state(self):
+    def assert_initial_state(self, after_focus_timer):
         self.assertIsNone(self._target_qid)
         self.assertIsNone(self._target_name)
         self.assertFalse(self.test_clicked_ok)
@@ -171,10 +177,15 @@ class RPCConfirmationWindowTestNoTarget(RPCConfirmationWindowTestBase, unittest.
         self.assertFalse(self._confirmed)
         self.assertFalse(self._rpc_ok_button.get_sensitive()) 
         self.assertFalse(self._error_bar.get_visible())
+        
+        if after_focus_timer:
+            self.assertTrue(self._focus_helper.can_perform_action())
+        else:
+            self.assertFalse(self._focus_helper.can_perform_action())
     
-class RPCConfirmationWindowTestWithTarget(RPCConfirmationWindowTestBase, unittest.TestCase):
+class RPCConfirmationWindowTestWithTarget(RPCConfirmationWindowTestBase, GtkTestCase):
     def __init__(self, *args, **kwargs):
-        unittest.TestCase.__init__(self, *args, **kwargs)
+        GtkTestCase.__init__(self, *args, **kwargs)
         RPCConfirmationWindowTestBase.__init__(self, 
                             "test-source", "test.Operation", "test-target")
     
@@ -182,13 +193,18 @@ class RPCConfirmationWindowTestWithTarget(RPCConfirmationWindowTestBase, unittes
         self._lifecycle_start(select_target = False)
         self._lifecycle_click(click_type = "ok")
     
-    def assert_initial_state(self):
+    def assert_initial_state(self, after_focus_timer):
         self.assertIsNotNone(self._target_qid)
         self.assertIsNotNone(self._target_name)
         self.assertFalse(self.test_clicked_ok)
         self.assertFalse(self.test_clicked_cancel)
         self.assertFalse(self._confirmed)
-        self.assertTrue(self._rpc_ok_button.get_sensitive()) 
+        if after_focus_timer:
+            self.assertTrue(self._rpc_ok_button.get_sensitive()) 
+            self.assertTrue(self._focus_helper.can_perform_action())
+        else:
+            self.assertFalse(self._rpc_ok_button.get_sensitive()) 
+            self.assertFalse(self._focus_helper.can_perform_action())
         
     def _lifecycle_click(self, click_type):
         RPCConfirmationWindowTestBase._lifecycle_click(self, click_type)
