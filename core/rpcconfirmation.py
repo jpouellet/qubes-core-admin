@@ -35,9 +35,9 @@ class RPCConfirmationWindow():
                   'error_message': "ErrorMessage",
                 }
 
-    def _clicked_ok(self, button):
-        assert button == self._rpc_ok_button, \
-               'Called the clicked ok callback through the wrong button'
+    def _clicked_ok(self, source):
+        assert source != None, \
+               'Called the clicked ok callback from no source object'
     
         if self._can_perform_action():
             self._confirmed = True
