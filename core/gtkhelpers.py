@@ -267,6 +267,9 @@ class FocusStealingHelper(GtkOneTimerHelper):
             self._invalidate_current_timer()
 
     def _window_state_event(self, window, event):
+        assert window == self._window, \
+               'Window state callback called with wrong window'
+    
         changed_focus = event.changed_mask & Gdk.WindowState.FOCUSED
         window_focus = event.new_window_state & Gdk.WindowState.FOCUSED
 

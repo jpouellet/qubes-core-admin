@@ -21,11 +21,26 @@
 
 import unittest, sys
 from core.rpcconfirmation import RPCConfirmationWindow
-from gtkhelpers import VMListModelerMock, GtkTestCase
+from gtkhelpers import VMListModelerMock, GtkTestCase, FocusStealingHelperMock
 
 class MockRPCConfirmationWindow(RPCConfirmationWindow):
     def _new_VM_list_modeler(self):
         return VMListModelerMock()
+        
+    def _new_focus_stealing_helper(self):
+        return FocusStealingHelperMock(
+                    self._rpc_window,
+                    self._rpc_ok_button,
+                    self._focus_stealing_seconds)
+                    
+    def __init__(self, source, rpc_operation, target = None,
+                    focus_stealing_seconds = 1):
+        self._focus_stealing_seconds = focus_stealing_seconds
+                            
+        RPCConfirmationWindow.__init__(self, source, rpc_operation, target)
+
+    def is_error_visible(self):
+        return self._error_bar.get_visible()
 
 class RPCConfirmationWindowTestBase(MockRPCConfirmationWindow, GtkTestCase):
     def __init__(self, test_method, source_name = "test-source", 
@@ -85,7 +100,27 @@ class RPCConfirmationWindowTestBase(MockRPCConfirmationWindow, GtkTestCase):
                             self._rpc_label.get_text())
 
     def test_hide_dom0_and_source(self):
-        self._rpc_combo_box
+        model = self._rpc_combo_box.get_model()
+        
+        self.assertIsNotNone(model)
+        
+        model_iter = model.get_iter_first()
+        found_dom0 = False
+        found_source = False
+        
+        while model_iter != None:
+            domain_name = model.get_value(model_iter, 1)
+            
+            if domain_name == 'dom0':
+                found_dom0 = True
+            elif domain_name == self.test_source_name:
+                found_source = True
+            
+            model_iter = model.iter_next(model_iter)
+
+
+        self.assertFalse(found_dom0)
+        self.assertFalse(found_source)
 
     def test_lifecycle_open_select_ok(self):
         self._lifecycle_start(select_target = True)
@@ -137,13 +172,18 @@ class RPCConfirmationWindowTestBase(MockRPCConfirmationWindow, GtkTestCase):
         self.assertFalse(self.test_called_show)
 
         self.assert_initial_state(False)
-        self._focus_helper._window_changed_focus(True)
+        self.assertTrue(isinstance(self._focus_helper, FocusStealingHelperMock))
+        
+        # Need the following because of pylint's complaints
+        if isinstance(self._focus_helper, FocusStealingHelperMock):
+            FocusStealingHelperMock.simulate_focus(self._focus_helper)
+            
         self.flush_gtk_events(self._test_time*2)
         self.assert_initial_state(True)
 
         try:
             # We expect the call to exit immediately, since no window is opened
-            self._confirm_rpc()
+            self.confirm_rpc()
         except BaseException:
             pass
 
@@ -223,7 +263,7 @@ class RPCConfirmationWindowTestWithTargetInvalid(unittest.TestCase):
 
     def assert_raises_error(self, expect, source, target):
         rpcWindow = MockRPCConfirmationWindow(source, "test.Operation", target)
-        self.assertEquals(expect, rpcWindow._error_bar.get_visible())
+        self.assertEquals(expect, rpcWindow.is_error_visible())
 
 if __name__=='__main__':
     test = False
@@ -239,6 +279,6 @@ if __name__=='__main__':
     if window:
         print MockRPCConfirmationWindow("test-source",
                                         "qubes.Filecopy",
-                                        "test-red1")._confirm_rpc()
+                                        "test-red1").confirm_rpc()
     elif test:
         unittest.main(argv = [sys.argv[0]])

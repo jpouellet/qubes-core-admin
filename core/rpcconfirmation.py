@@ -36,16 +36,25 @@ class RPCConfirmationWindow():
                 }
 
     def _clicked_ok(self, button):
+        assert button == self._rpc_ok_button, \
+               'Called the clicked ok callback through the wrong button'
+    
         if self._can_perform_action():
             self._confirmed = True
             self._close()
 
     def _clicked_cancel(self, button):
+        assert button == self._rpc_cancel_button, \
+               'Called the clicked cancel callback through the wrong button'
+               
         if self._can_perform_action():
             self._confirmed = False
             self._close()
 
     def _key_pressed(self, window, key):
+        assert window == self._rpc_window, \
+               'Key pressed callback called with wrong window'
+    
         if self._can_perform_action():
             # Check if the ESC key was pressed (defined in gdkkeysyms.h)
             if key.keyval == 0xFF1B:
@@ -68,6 +77,10 @@ class RPCConfirmationWindow():
         self._error_bar.set_visible(True)
 
     def _close_error(self, error_bar, response):
+        assert error_bar == self._error_bar, \
+               'Closed the error bar with the wrong error bar as parameter'
+        assert response != None, 'Closed the error bar with None as a response'
+    
         self._error_bar.set_visible(False)
 
     def _set_initial_target(self, source, target):
@@ -101,8 +114,7 @@ class RPCConfirmationWindow():
 
         self._error_bar.connect("response", self._close_error)
 
-    def __init__(self, source, rpc_operation, target = None,
-                 focus_stealing_seconds = 1):
+    def __init__(self, source, rpc_operation, target = None):
         self._gtk_builder = Gtk.Builder()
         self._gtk_builder.add_from_file(self._source_file)
         self._rpc_window = self._gtk_builder.get_object(
@@ -124,10 +136,7 @@ class RPCConfirmationWindow():
         self._target_qid = None
         self._target_name = None
 
-        self._focus_helper = FocusStealingHelper(
-                    self._rpc_window,
-                    self._rpc_ok_button,
-                    focus_stealing_seconds)
+        self._focus_helper = self._new_focus_stealing_helper()
 
         rpc_text  = rpc_operation[0:rpc_operation.find('.')+1] + "<b>"
         rpc_text += rpc_operation[rpc_operation.find('.')+1:len(rpc_operation)]
@@ -165,7 +174,13 @@ class RPCConfirmationWindow():
     def _new_VM_list_modeler(self):
         return VMListModeler()
 
-    def _confirm_rpc(self):
+    def _new_focus_stealing_helper(self):
+        return FocusStealingHelper(
+                    self._rpc_window,
+                    self._rpc_ok_button,
+                    1)
+
+    def confirm_rpc(self):
         self._show()
 
         if self._confirmed:
@@ -175,9 +190,8 @@ class RPCConfirmationWindow():
         else:
             return False
 
-    @staticmethod
-    def confirm_rpc(source, rpc_operation, target = None):
-        window = RPCConfirmationWindow(source, rpc_operation, target)
+def confirm_rpc(source, rpc_operation, target = None):
+    window = RPCConfirmationWindow(source, rpc_operation, target)
 
-        return window._confirm_rpc()
+    return window.confirm_rpc()
 

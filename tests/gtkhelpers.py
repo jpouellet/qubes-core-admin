@@ -297,7 +297,11 @@ class GtkOneTimerHelperTest(GtkOneTimerHelper, GtkTestCase):
         self.assertEquals(5, self._current_timer_id)
         self.assertTrue(self._timer_has_completed())
 
-class FocusStealingHelperTest(FocusStealingHelper, GtkTestCase):
+class FocusStealingHelperMock(FocusStealingHelper):
+    def simulate_focus(self):
+        self._window_changed_focus(True)
+
+class FocusStealingHelperTest(FocusStealingHelperMock, GtkTestCase):
     def __init__(self, *args, **kwargs):
         GtkTestCase.__init__(self, *args, **kwargs)
 
@@ -305,7 +309,7 @@ class FocusStealingHelperTest(FocusStealingHelper, GtkTestCase):
         self._test_button = Gtk.Button()
         self._test_window = Gtk.Window()
 
-        FocusStealingHelper.__init__(self, self._test_window,
+        FocusStealingHelperMock.__init__(self, self._test_window,
                                      self._test_button, self._test_time)
 
     def test_nothing_runs_automatically(self):
