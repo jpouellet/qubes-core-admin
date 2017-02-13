@@ -26,24 +26,24 @@ from gtkhelpers import VMListModelerMock, GtkTestCase, FocusStealingHelperMock
 class MockRPCConfirmationWindow(RPCConfirmationWindow):
     def _new_VM_list_modeler(self):
         return VMListModelerMock()
-        
+
     def _new_focus_stealing_helper(self):
         return FocusStealingHelperMock(
                     self._rpc_window,
                     self._rpc_ok_button,
                     self._focus_stealing_seconds)
-                    
+
     def __init__(self, source, rpc_operation, target = None,
                     focus_stealing_seconds = 1):
         self._focus_stealing_seconds = focus_stealing_seconds
-                            
+
         RPCConfirmationWindow.__init__(self, source, rpc_operation, target)
 
     def is_error_visible(self):
         return self._error_bar.get_visible()
 
 class RPCConfirmationWindowTestBase(MockRPCConfirmationWindow, GtkTestCase):
-    def __init__(self, test_method, source_name = "test-source", 
+    def __init__(self, test_method, source_name = "test-source",
                  rpc_operation = "test.Operation", target_name = None):
         GtkTestCase.__init__(self, test_method)
         self.test_source_name = source_name
@@ -101,21 +101,21 @@ class RPCConfirmationWindowTestBase(MockRPCConfirmationWindow, GtkTestCase):
 
     def test_hide_dom0_and_source(self):
         model = self._rpc_combo_box.get_model()
-        
+
         self.assertIsNotNone(model)
-        
+
         model_iter = model.get_iter_first()
         found_dom0 = False
         found_source = False
-        
+
         while model_iter != None:
             domain_name = model.get_value(model_iter, 1)
-            
+
             if domain_name == 'dom0':
                 found_dom0 = True
             elif domain_name == self.test_source_name:
                 found_source = True
-            
+
             model_iter = model.iter_next(model_iter)
 
 
@@ -173,11 +173,11 @@ class RPCConfirmationWindowTestBase(MockRPCConfirmationWindow, GtkTestCase):
 
         self.assert_initial_state(False)
         self.assertTrue(isinstance(self._focus_helper, FocusStealingHelperMock))
-        
+
         # Need the following because of pylint's complaints
         if isinstance(self._focus_helper, FocusStealingHelperMock):
             FocusStealingHelperMock.simulate_focus(self._focus_helper)
-            
+
         self.flush_gtk_events(self._test_time*2)
         self.assert_initial_state(True)
 
@@ -205,7 +205,7 @@ class RPCConfirmationWindowTestBase(MockRPCConfirmationWindow, GtkTestCase):
         self.assertFalse(self.test_clicked_ok)
         self.assertFalse(self.test_clicked_cancel)
         self.assertFalse(self._confirmed)
-        
+
     def assert_initial_state(self, after_focus_timer):
         self.assertIsNone(self._target_qid)
         self.assertIsNone(self._target_name)

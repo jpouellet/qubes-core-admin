@@ -20,7 +20,7 @@
 #
 
 from . gtkhelpers import VMListModeler, FocusStealingHelper, glade_directory
-from gi.repository import Gtk
+from gi.repository import Gtk, Gdk
 import os
 
 class RPCConfirmationWindow():
@@ -38,7 +38,7 @@ class RPCConfirmationWindow():
     def _clicked_ok(self, source):
         assert source != None, \
                'Called the clicked ok callback from no source object'
-    
+
         if self._can_perform_action():
             self._confirmed = True
             self._close()
@@ -46,7 +46,7 @@ class RPCConfirmationWindow():
     def _clicked_cancel(self, button):
         assert button == self._rpc_cancel_button, \
                'Called the clicked cancel callback through the wrong button'
-               
+
         if self._can_perform_action():
             self._confirmed = False
             self._close()
@@ -54,10 +54,9 @@ class RPCConfirmationWindow():
     def _key_pressed(self, window, key):
         assert window == self._rpc_window, \
                'Key pressed callback called with wrong window'
-    
+
         if self._can_perform_action():
-            # Check if the ESC key was pressed (defined in gdkkeysyms.h)
-            if key.keyval == 0xFF1B:
+            if key.keyval == Gdk.KEY_Escape:
                 self._confirmed = False
                 self._close()
 
@@ -80,7 +79,7 @@ class RPCConfirmationWindow():
         assert error_bar == self._error_bar, \
                'Closed the error bar with the wrong error bar as parameter'
         assert response != None, 'Closed the error bar with None as a response'
-    
+
         self._error_bar.set_visible(False)
 
     def _set_initial_target(self, source, target):

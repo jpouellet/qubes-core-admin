@@ -22,7 +22,7 @@
 import qubes
 import gi, os
 gi.require_version('Gtk', '3.0')
-from gi.repository import Gtk, Gdk, GdkPixbuf, GObject
+from gi.repository import Gtk, Gdk, GdkPixbuf, GObject, GLib
 
 glade_directory = os.path.join(os.path.dirname(__file__), "glade")
 
@@ -36,7 +36,7 @@ class GtkIconGetter:
         if name not in self._icons:
             try:
                 icon = self._theme.load_icon(name, self._size, 0)
-            except BaseException:
+            except GLib.Error:
                 icon = self._theme.load_icon("gnome-foot", self._size, 0)
 
             self._icons[name] = icon
@@ -46,10 +46,10 @@ class GtkIconGetter:
 class VMListModeler:
     def __init__(self):
         self._icon_getter = GtkIconGetter(16)
-        
+
         self._list = []
         self._load_list()
-        
+
         self._entries = {}
         self._create_entries()
 
@@ -127,7 +127,7 @@ class VMListModeler:
             exclusions = []
             for vm in self._list:
                 matches = True
-                
+
                 if vm_filter_list:
                     for vm_filter in vm_filter_list:
                         if not vm_filter.matches(vm):
@@ -269,7 +269,7 @@ class FocusStealingHelper(GtkOneTimerHelper):
     def _window_state_event(self, window, event):
         assert window == self._window, \
                'Window state callback called with wrong window'
-    
+
         changed_focus = event.changed_mask & Gdk.WindowState.FOCUSED
         window_focus = event.new_window_state & Gdk.WindowState.FOCUSED
 
