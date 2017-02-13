@@ -99,6 +99,20 @@ class RPCConfirmationWindowTestBase(MockRPCConfirmationWindow, GtkTestCase):
         self.assertTrue(self.test_rpc_operation in
                             self._rpc_label.get_text())
 
+    def test_format_rpc_text(self):
+        self.assertEquals("qubes.<b>Test</b>",
+                            self._format_rpc_text("qubes.Test"))
+        self.assertEquals("custom.<b>Domain</b>",
+                            self._format_rpc_text("custom.Domain"))
+        self.assertEquals("nodomain",
+                            self._format_rpc_text("nodomain"))
+        self.assertEquals("domain.<b>Sub.Operation</b>",
+                            self._format_rpc_text("domain.Sub.Operation"))
+        self.assertEquals("",
+                            self._format_rpc_text(""))
+        self.assertEquals(".",
+                            self._format_rpc_text("."))
+
     def test_hide_dom0_and_source(self):
         model = self._rpc_combo_box.get_model()
 

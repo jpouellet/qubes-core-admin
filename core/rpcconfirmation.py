@@ -106,6 +106,16 @@ class RPCConfirmationWindow():
     def _can_perform_action(self):
         return self._focus_helper.can_perform_action()
 
+    def _format_rpc_text(self, rpc_operation):
+        partitioned = rpc_operation.partition('.')
+
+        formatted = partitioned[0] + partitioned[1]
+
+        if len(partitioned[2]) > 0:
+            formatted += "<b>" + partitioned[2] + "</b>"
+
+        return formatted
+
     def _connect_events(self):
         self._rpc_window.connect("key-press-event",self._key_pressed)
         self._rpc_ok_button.connect("clicked", self._clicked_ok)
@@ -137,11 +147,7 @@ class RPCConfirmationWindow():
 
         self._focus_helper = self._new_focus_stealing_helper()
 
-        rpc_text  = rpc_operation[0:rpc_operation.find('.')+1] + "<b>"
-        rpc_text += rpc_operation[rpc_operation.find('.')+1:len(rpc_operation)]
-        rpc_text += "</b>"
-
-        self._rpc_label.set_markup(rpc_text)
+        self._rpc_label.set_markup(self._format_rpc_text(rpc_operation))
 
         list_modeler = self._new_VM_list_modeler()
 
