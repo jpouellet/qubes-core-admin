@@ -17,6 +17,10 @@ endif
 	cp qubes.py[co] $(DESTDIR)$(PYTHON_QUBESPATH)
 	cp qubesutils.py $(DESTDIR)$(PYTHON_QUBESPATH)
 	cp qubesutils.py[co] $(DESTDIR)$(PYTHON_QUBESPATH)
+	cp rpcconfirmation.py $(DESTDIR)$(PYTHON_QUBESPATH)
+	cp rpcconfirmation.py[co] $(DESTDIR)$(PYTHON_QUBESPATH)
+	cp gtkhelpers.py $(DESTDIR)$(PYTHON_QUBESPATH)
+	cp gtkhelpers.py[co] $(DESTDIR)$(PYTHON_QUBESPATH)
 	cp guihelpers.py $(DESTDIR)$(PYTHON_QUBESPATH)
 	cp guihelpers.py[co] $(DESTDIR)$(PYTHON_QUBESPATH)
 	cp notify.py $(DESTDIR)$(PYTHON_QUBESPATH)
@@ -30,4 +34,5 @@ ifneq ($(BACKEND_VMM),)
 		cp settings-$(SETTINGS_SUFFIX).pyo $(DESTDIR)$(PYTHON_QUBESPATH)/settings.pyo; \
 	fi
 endif
+	make -C glade install
 	make -C storage install

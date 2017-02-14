@@ -190,6 +190,12 @@ fi
 %{python_sitearch}/qubes/qubesutils.py
 %{python_sitearch}/qubes/qubesutils.pyc
 %{python_sitearch}/qubes/qubesutils.pyo
+%{python_sitearch}/qubes/rpcconfirmation.py
+%{python_sitearch}/qubes/rpcconfirmation.pyc
+%{python_sitearch}/qubes/rpcconfirmation.pyo
+%{python_sitearch}/qubes/gtkhelpers.py
+%{python_sitearch}/qubes/gtkhelpers.pyc
+%{python_sitearch}/qubes/gtkhelpers.pyo
 %{python_sitearch}/qubes/guihelpers.py
 %{python_sitearch}/qubes/guihelpers.pyc
 %{python_sitearch}/qubes/guihelpers.pyo
@@ -209,6 +215,7 @@ fi
 %{python_sitearch}/qubes/modules/0*.py*
 %{python_sitearch}/qubes/modules/__init__.py*
 %{python_sitearch}/qubes/tests
+%{python_sitearch}/qubes/glade
 /usr/lib/qubes/unbind-pci-device.sh
 /usr/lib/qubes/cleanup-dispvms
 /usr/lib/qubes/qmemman_daemon.py*
