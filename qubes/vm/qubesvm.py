@@ -1045,7 +1045,8 @@ class QubesVM(qubes.vm.mix.net.NetVMMixin, qubes.vm.BaseVM):
         return (yield from asyncio.create_subprocess_exec(
             qubes.config.system_path['qrexec_client_path'],
             '-d', str(self.name),
-            *(('-t', '-T') if filter_esc else ()),
+            *(('-t',) if filter_esc else ()),
+            *(('-T',) if os.isatty(sys.stderr.fileno()) else ()),
             '{}:QUBESRPC {} {}'.format(user, service, source),
             **kwargs))
 
