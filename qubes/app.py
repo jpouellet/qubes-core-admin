@@ -1252,9 +1252,15 @@ class Qubes(qubes.PropertyHolder):
         if event == libvirt.VIR_DOMAIN_EVENT_STOPPED:
             vm.on_libvirt_domain_stopped()
         elif event == libvirt.VIR_DOMAIN_EVENT_SUSPENDED:
-            vm.fire_event('domain-paused')
+            try:
+                vm.fire_event('domain-paused')
+            except:
+                pass
         elif event == libvirt.VIR_DOMAIN_EVENT_RESUMED:
-            vm.fire_event('domain-unpaused')
+            try:
+                vm.fire_event('domain-unpaused')
+            except:
+                pass
 
     @qubes.events.handler('domain-pre-delete')
     def on_domain_pre_deleted(self, event, vm):
