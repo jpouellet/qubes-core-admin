@@ -192,16 +192,12 @@ class QubesVM(qubes.vm.mix.net.NetVMMixin, qubes.vm.BaseVM):
 
             Fired when the domain has been paused.
 
-            Handler for this event can be asynchronous (a coroutine).
-
             :param subject: Event emitter (the qube object)
             :param event: Event name (``'domain-paused'``)
 
         .. event:: domain-unpaused (subject, event)
 
             Fired when the domain has been unpaused.
-
-            Handler for this event can be asynchronous (a coroutine).
 
             :param subject: Event emitter (the qube object)
             :param event: Event name (``'domain-unpaused'``)
