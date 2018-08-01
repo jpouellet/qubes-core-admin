@@ -1254,13 +1254,13 @@ class Qubes(qubes.PropertyHolder):
         elif event == libvirt.VIR_DOMAIN_EVENT_SUSPENDED:
             try:
                 vm.fire_event('domain-paused')
-            except:
-                pass
+            except Exception: # pylint: disable=broad-except
+                self.log.exception('Uncaught exception caught from domain-paused handler')
         elif event == libvirt.VIR_DOMAIN_EVENT_RESUMED:
             try:
                 vm.fire_event('domain-unpaused')
-            except:
-                pass
+            except Exception: # pylint: disable=broad-except
+                self.log.exception('Uncaught exception caught from domain-unpaused handler')
 
     @qubes.events.handler('domain-pre-delete')
     def on_domain_pre_deleted(self, event, vm):
